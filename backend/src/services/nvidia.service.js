@@ -40,7 +40,7 @@ export class NvidiaService {
     const url = `${config.nvidiaBaseUrl}/chat/completions`;
 
     const payload = {
-      model,
+      model: model || "meta/llama-3.3-70b-instruct",
       messages: messages.map((m) => ({
         role: m.role === "assistant" ? "assistant" : m.role === "system" ? "system" : "user",
         content: typeof m.content === "string" ? m.content : String(m.content || m.text || "")
@@ -64,6 +64,24 @@ export class NvidiaService {
 
     if (!res.ok) {
       const errText = await res.text();
+
+      if (res.status === 404) {
+        return {
+          provider: "nvidia",
+          id: `chatcmpl-${Date.now()}`,
+          choices: [
+            {
+              index: 0,
+              message: {
+                role: "assistant",
+                content: `[NVIDIA NIM Error]: Model "${model}" was not found or is deprecated on NVIDIA NIM. Please select a valid active model like "meta/llama-3.3-70b-instruct" or "deepseek-ai/deepseek-r1" in the Model Hub.`
+              },
+              finish_reason: "stop"
+            }
+          ]
+        };
+      }
+
       const err = new Error(errText || "NVIDIA Chat Completion Error");
       err.status = res.status;
       throw err;

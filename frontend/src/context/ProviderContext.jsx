@@ -101,7 +101,6 @@ export const PROVIDER_TEMPLATES = [
 const ProviderContext = createContext(null);
 
 export function ProviderProvider({ children }) {
-  // Array of connected provider objects stored encrypted in localStorage
   const [providers, setProviders] = useState([]);
   const [activeModel, setActiveModel] = useState(null);
   const [connecting, setConnecting] = useState(false);
@@ -116,7 +115,6 @@ export function ProviderProvider({ children }) {
           const parsed = JSON.parse(savedRaw);
           setProviders(parsed);
 
-          // Restore saved active model
           const savedActive = localStorage.getItem("hvrc_active_model");
           if (savedActive) {
             setActiveModel(JSON.parse(savedActive));
@@ -138,20 +136,18 @@ export function ProviderProvider({ children }) {
     loadSavedProviders();
   }, []);
 
-  // Save providers list to localStorage
   const persistProviders = (updatedList) => {
     setProviders(updatedList);
     localStorage.setItem("hvrc_universal_providers", JSON.stringify(updatedList));
   };
 
-  // Save active model selection
   const selectActiveModel = (modelObj) => {
     setActiveModel(modelObj);
     localStorage.setItem("hvrc_active_model", JSON.stringify(modelObj));
   };
 
   /**
-   * Connect to an OpenAI-compatible endpoint
+   * Connect to an OpenAI-compatible endpoint with safe JSON parsing & proxy fallback
    */
   const connectProvider = async ({ templateId, name, baseUrl, apiKey }) => {
     setConnecting(true);
@@ -165,24 +161,54 @@ export function ProviderProvider({ children }) {
         throw new Error("Base URL is required to connect to provider.");
       }
 
-      // Encrypt API key on client side before transmitting/storing
+      // Client-side AES-GCM encryption
       const encryptedKey = cleanKey ? await encryptSecret(cleanKey) : "";
 
-      // Send to Universal Backend Gateway endpoint POST /api/providers/connect
-      const response = await fetch("/api/providers/connect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name || templateId || "Universal AI Provider",
-          baseUrl: cleanBaseUrl,
-          apiKey: cleanKey
-        })
-      });
+      let data = null;
+      try {
+        const response = await fetch("/api/providers/connect", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name || templateId || "Universal AI Provider",
+            baseUrl: cleanBaseUrl,
+            apiKey: cleanKey
+          })
+        });
 
-      const data = await response.json();
+        const textRes = await response.text();
+        try {
+          data = JSON.parse(textRes);
+        } catch (e) {
+          throw new Error(`Server returned invalid non-JSON response (Status ${response.status})`);
+        }
 
-      if (!response.ok || data.error) {
-        throw new Error(data.message || "Failed to validate and connect provider.");
+        if (!response.ok || data.error) {
+          throw new Error(data.message || "Failed to validate and connect provider.");
+        }
+      } catch (gateErr) {
+        // Fallback for local proxy endpoints (/proxy/nvidia/models)
+        if (cleanBaseUrl.includes("nvidia.com")) {
+          const proxyRes = await fetch("/proxy/nvidia/models", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ apiKey: cleanKey })
+          });
+          if (proxyRes.ok) {
+            const pData = await proxyRes.json();
+            data = {
+              connected: true,
+              name: name || "NVIDIA NIM",
+              baseUrl: cleanBaseUrl,
+              models: pData.models || [],
+              modelCount: pData.models?.length || 0
+            };
+          } else {
+            throw gateErr;
+          }
+        } else {
+          throw gateErr;
+        }
       }
 
       const newProvider = {
@@ -197,11 +223,9 @@ export function ProviderProvider({ children }) {
         lastConnected: new Date().toISOString()
       };
 
-      // Filter out duplicate connections to same baseUrl
       const updated = [newProvider, ...providers.filter((p) => p.baseUrl !== cleanBaseUrl)];
       persistProviders(updated);
 
-      // Auto-select first discovered model if no model is active
       if (newProvider.models.length > 0) {
         const firstM = newProvider.models[0];
         selectActiveModel({
@@ -222,9 +246,6 @@ export function ProviderProvider({ children }) {
     }
   };
 
-  /**
-   * Disconnect a provider
-   */
   const disconnectProvider = (providerId) => {
     const updated = providers.filter((p) => p.id !== providerId);
     persistProviders(updated);
@@ -246,9 +267,6 @@ export function ProviderProvider({ children }) {
     }
   };
 
-  /**
-   * Refresh live models for a connected provider
-   */
   const refreshModels = async (providerId) => {
     const target = providers.find((p) => p.id === providerId);
     if (!target) return;
@@ -280,9 +298,6 @@ export function ProviderProvider({ children }) {
     }
   };
 
-  /**
-   * Execute Chat Completion via Universal Gateway
-   */
   const executeCompletion = async (messages, options = {}) => {
     if (!activeModel) {
       return {

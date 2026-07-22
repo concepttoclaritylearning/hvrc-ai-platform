@@ -21,6 +21,10 @@ export default defineConfig({
     port: 5173,
     host: "0.0.0.0",
     proxy: {
+      "/api/providers": {
+        target: "http://localhost:3001",
+        changeOrigin: true
+      },
       "/proxy": {
         target: "http://localhost:3001",
         changeOrigin: true
@@ -51,11 +55,11 @@ export default defineConfig({
   plugins: [
     react(),
     visualizer({
-      template: "treemap", // or sunburst
+      template: "treemap",
       open: false,
       gzipSize: true,
       brotliSize: true,
-      filename: "bundleinspector.html" // will be saved in project's root
+      filename: "bundleinspector.html"
     })
   ],
   resolve: {

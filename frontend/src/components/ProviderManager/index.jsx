@@ -16,9 +16,29 @@ import {
   BracketsCurly,
   Info,
   ShieldCheck,
-  Lock
+  Lock,
+  Play,
+  Spinner,
+  PaperPlane
 } from "@phosphor-icons/react";
 import { useProviders } from "@/context/ProviderContext";
+
+// Helper to determine AI Creator Vendor from model ID string
+export function getModelVendor(modelId = "") {
+  const idLower = modelId.toLowerCase();
+  if (idLower.startsWith("meta/") || idLower.includes("llama")) return { name: "Meta", logo: "🦙", color: "bg-[#2F6BFF]/10 text-[#2F6BFF] border-blue-200" };
+  if (idLower.startsWith("deepseek-ai/") || idLower.includes("deepseek")) return { name: "DeepSeek", logo: "🐋", color: "bg-cyan-50 text-cyan-700 border-cyan-200" };
+  if (idLower.startsWith("nvidia/") || idLower.includes("nemotron")) return { name: "NVIDIA", logo: "🟢", color: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+  if (idLower.startsWith("mistralai/") || idLower.includes("mistral") || idLower.includes("mixtral")) return { name: "Mistral", logo: "🌪️", color: "bg-amber-50 text-amber-800 border-amber-200" };
+  if (idLower.startsWith("google/") || idLower.includes("gemma")) return { name: "Google", logo: "💎", color: "bg-red-50 text-red-700 border-red-200" };
+  if (idLower.startsWith("qwen/") || idLower.includes("qwen")) return { name: "Qwen", logo: "🔮", color: "bg-purple-50 text-purple-700 border-purple-200" };
+  if (idLower.startsWith("microsoft/") || idLower.includes("phi")) return { name: "Microsoft", logo: "🪟", color: "bg-blue-50 text-blue-800 border-blue-200" };
+  if (idLower.startsWith("01-ai/") || idLower.includes("yi")) return { name: "01.AI Yi", logo: "🎯", color: "bg-emerald-50 text-emerald-800 border-emerald-200" };
+  if (idLower.startsWith("databricks/") || idLower.includes("dbrx")) return { name: "Databricks", logo: "🧱", color: "bg-[#1E1E1E] text-stone-200 border-stone-700" };
+  if (idLower.includes("gpt") || idLower.includes("o1") || idLower.includes("o3")) return { name: "OpenAI", logo: "⚡", color: "bg-green-50 text-green-800 border-green-200" };
+
+  return { name: "AI Creator", logo: "🤖", color: "bg-stone-100 text-stone-700 border-stone-200" };
+}
 
 export default function ProviderManager() {
   const {
@@ -30,7 +50,8 @@ export default function ProviderManager() {
     connectProvider,
     disconnectProvider,
     refreshModels,
-    selectActiveModel
+    selectActiveModel,
+    executeCompletion
   } = useProviders();
 
   // Modal State
@@ -40,8 +61,16 @@ export default function ProviderManager() {
   const [baseUrlInput, setBaseUrlInput] = useState(templates[0].baseUrl);
   const [apiKeyInput, setApiKeyInput] = useState("");
 
+  // Test Runner State
+  const [testingModel, setTestingModel] = useState(null);
+  const [testPrompt, setTestPrompt] = useState("Say hello and explain what AI model architecture you are in 2 sentences.");
+  const [testResult, setTestResult] = useState(null);
+  const [isTestRunning, setIsTestRunning] = useState(false);
+
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProviderFilter, setSelectedProviderFilter] = useState("ALL");
+  const [selectedVendorFilter, setSelectedVendorFilter] = useState("ALL");
   const [filterReasoning, setFilterReasoning] = useState(false);
   const [filterVision, setFilterVision] = useState(false);
 
@@ -79,20 +108,53 @@ export default function ProviderManager() {
       providerId: p.id,
       providerName: p.name,
       baseUrl: p.baseUrl,
-      encryptedKey: p.encryptedKey
+      encryptedKey: p.encryptedKey,
+      vendor: getModelVendor(m.id)
     }))
   );
 
-  // Filter models based on search query & tags
+  // Extract unique vendors for vendor filter dropdown
+  const uniqueVendors = Array.from(new Set(allDiscoveredModels.map((m) => m.vendor.name)));
+
+  // Filter models based on search query, provider, vendor, and tags
   const filteredModels = allDiscoveredModels.filter((m) => {
     const matchesSearch =
       m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.providerName.toLowerCase().includes(searchQuery.toLowerCase());
+      m.providerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.vendor.name.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesProvider =
+      selectedProviderFilter === "ALL" || m.providerName === selectedProviderFilter;
+
+    const matchesVendor =
+      selectedVendorFilter === "ALL" || m.vendor.name === selectedVendorFilter;
+
     const matchesReasoning = !filterReasoning || m.supportsReasoning;
     const matchesVision = !filterVision || m.supportsVision;
-    return matchesSearch && matchesReasoning && matchesVision;
+
+    return matchesSearch && matchesProvider && matchesVendor && matchesReasoning && matchesVision;
   });
+
+  // Execute live completion test for a specific model card
+  const handleRunModelTest = async () => {
+    if (!testingModel || !testPrompt.trim()) return;
+
+    setIsTestRunning(true);
+    setTestResult(null);
+
+    // Temporarily make model active for test execution
+    selectActiveModel(testingModel);
+
+    try {
+      const res = await executeCompletion([{ role: "user", content: testPrompt.trim() }]);
+      setTestResult(res.text || "Test completion received successfully.");
+    } catch (err) {
+      setTestResult(`[Test Execution Error]: ${err.message || "Failed to test model."}`);
+    } finally {
+      setIsTestRunning(false);
+    }
+  };
 
   return (
     <div className="space-y-8 font-sans">
@@ -103,11 +165,11 @@ export default function ProviderManager() {
             <span className="bg-[#2F6BFF] text-white font-extrabold text-[10px] uppercase tracking-wider px-3 py-1 rounded-full">
               Universal OpenAI Gateway
             </span>
-            <span className="text-xs text-stone-400 font-mono">Stateless API Engine</span>
+            <span className="text-xs text-stone-400 font-mono">Multi-Provider AI Hub</span>
           </div>
-          <h2 className="text-2xl font-extrabold text-white">Provider & Model Hub</h2>
+          <h2 className="text-2xl font-extrabold text-white">Provider &amp; Model Hub</h2>
           <p className="text-xs text-stone-400 mt-1 max-w-xl">
-            Connect any OpenAI-compatible API endpoint. Models are fetched dynamically via live <code className="text-emerald-400">GET /v1/models</code> requests. API Keys are AES-GCM encrypted in browser local storage.
+            Search, filter, and test models from Meta, DeepSeek, NVIDIA, Mistral, Google, Qwen, and OpenAI endpoints through a single universal gateway.
           </p>
         </div>
 
@@ -239,32 +301,62 @@ export default function ProviderManager() {
         </div>
       )}
 
-      {/* 3. Universal Searchable Live Model Selector */}
+      {/* 3. Universal Searchable Live Model Selector Across ALL Providers & Vendors */}
       <div className="space-y-4 pt-4 border-t border-stone-200">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h3 className="text-sm font-extrabold text-stone-900 flex items-center gap-2">
               <Sparkle className="w-4 h-4 text-[#2F6BFF]" />
-              <span>Live Discovered Models ({filteredModels.length})</span>
+              <span>Universal Searchable Model Hub ({filteredModels.length})</span>
             </h3>
             <p className="text-xs text-stone-500 mt-0.5">
-              Select an active model for code workspace generation and chat completions.
+              Filter models by AI Provider (NVIDIA, OpenRouter, Groq) or AI Creator (Meta, DeepSeek, Mistral, Google).
             </p>
           </div>
 
-          {/* Search & Tag Filter Controls */}
+          {/* Universal Search, Provider Dropdown, Vendor Dropdown, & Capability Filters */}
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Search Input */}
             <div className="relative">
               <MagnifyingGlass className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-2.5" />
               <input
                 type="text"
-                placeholder="Search models..."
+                placeholder="Search all models & creators..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs outline-none focus:border-[#2F6BFF] text-stone-800 w-48"
+                className="pl-8 pr-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs outline-none focus:border-[#2F6BFF] text-stone-800 w-52 font-medium"
               />
             </div>
 
+            {/* Provider Filter Select */}
+            <select
+              value={selectedProviderFilter}
+              onChange={(e) => setSelectedProviderFilter(e.target.value)}
+              className="px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-700 outline-none focus:border-[#2F6BFF]"
+            >
+              <option value="ALL">🌐 All Providers</option>
+              {providers.map((p) => (
+                <option key={p.id} value={p.name}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Vendor/Creator Filter Select */}
+            <select
+              value={selectedVendorFilter}
+              onChange={(e) => setSelectedVendorFilter(e.target.value)}
+              className="px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-700 outline-none focus:border-[#2F6BFF]"
+            >
+              <option value="ALL">🤖 All AI Creators</option>
+              {uniqueVendors.map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
+
+            {/* Reasoning & Vision Tags */}
             <button
               onClick={() => setFilterReasoning(!filterReasoning)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
@@ -291,47 +383,81 @@ export default function ProviderManager() {
 
         {/* Model Cards Grid */}
         {filteredModels.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredModels.map((m, idx) => {
               const isActive = activeModel?.id === m.id && activeModel?.baseUrl === m.baseUrl;
               return (
                 <div
                   key={`${m.id}-${idx}`}
-                  onClick={() =>
-                    selectActiveModel({
-                      id: m.id,
-                      name: m.name,
-                      providerName: m.providerName,
-                      baseUrl: m.baseUrl,
-                      encryptedKey: m.encryptedKey
-                    })
-                  }
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                  className={`p-5 rounded-3xl border transition-all flex flex-col justify-between gap-4 ${
                     isActive
-                      ? "bg-blue-50/70 border-[#2F6BFF] ring-2 ring-[#2F6BFF]/20 shadow-sm"
+                      ? "bg-blue-50/70 border-[#2F6BFF] ring-2 ring-[#2F6BFF]/20 shadow-md"
                       : "bg-white border-stone-200 hover:border-stone-400 hover:shadow-xs"
                   }`}
                 >
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-bold text-[#2F6BFF] bg-blue-100/60 px-2 py-0.5 rounded-full truncate max-w-[140px]">
-                        {m.providerName}
-                      </span>
+                  <div className="space-y-2">
+                    {/* Provider & Creator Vendor Badges */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${m.vendor.color}`}>
+                          <span>{m.vendor.logo}</span>
+                          <span>{m.vendor.name}</span>
+                        </span>
+                        <span className="text-[10px] font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-full">
+                          {m.providerName}
+                        </span>
+                      </div>
+
                       {isActive && (
-                        <span className="text-[10px] font-extrabold text-white bg-[#2F6BFF] px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                        <span className="text-[10px] font-extrabold text-white bg-[#2F6BFF] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
                           <Check className="w-3 h-3" /> Active
                         </span>
                       )}
                     </div>
-                    <div className="font-extrabold text-xs text-stone-900 truncate">{m.name}</div>
-                    <div className="text-[10px] font-mono text-stone-400 truncate mt-0.5">{m.id}</div>
+
+                    <div>
+                      <div className="font-extrabold text-sm text-stone-900 truncate">{m.name}</div>
+                      <div className="text-[11px] font-mono text-stone-400 truncate mt-0.5">{m.id}</div>
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-stone-100 text-[10px] text-stone-500 font-medium">
-                    <span>Context: <strong>{m.context}</strong></span>
-                    <div className="flex items-center gap-1">
-                      {m.supportsReasoning && <span className="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold">Reasoning</span>}
-                      {m.supportsVision && <span className="bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded font-bold">Vision</span>}
+                  {/* Card Bottom Meta & Actions */}
+                  <div className="pt-3 border-t border-stone-100 flex items-center justify-between">
+                    <div className="text-[10px] text-stone-500 font-medium">
+                      Context: <strong className="text-stone-800">{m.context}</strong>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => {
+                          setTestingModel(m);
+                          setTestResult(null);
+                        }}
+                        className="px-2.5 py-1 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors"
+                        title="Run live completion test"
+                      >
+                        <Play className="w-3 h-3 text-emerald-600" />
+                        <span>Test Model</span>
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          selectActiveModel({
+                            id: m.id,
+                            name: m.name,
+                            providerName: m.providerName,
+                            baseUrl: m.baseUrl,
+                            encryptedKey: m.encryptedKey
+                          })
+                        }
+                        className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                          isActive
+                            ? "bg-[#2F6BFF] text-white"
+                            : "bg-stone-900 hover:bg-stone-800 text-white"
+                        }`}
+                      >
+                        {isActive ? "Selected" : "Select"}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -341,15 +467,89 @@ export default function ProviderManager() {
         ) : (
           <div className="bg-stone-50 p-8 rounded-3xl text-center border border-dashed border-stone-200">
             <Info className="w-8 h-8 text-stone-400 mx-auto mb-2" />
-            <div className="text-sm font-bold text-stone-700">No models discovered</div>
+            <div className="text-sm font-bold text-stone-700">No models match filters</div>
             <p className="text-xs text-stone-500 mt-1">
-              Connect a provider above (NVIDIA, OpenRouter, Groq, OpenAI, or Ollama) to discover live endpoints.
+              Try resetting your search query or provider/vendor filter selections.
             </p>
           </div>
         )}
       </div>
 
-      {/* 4. Connection Modal */}
+      {/* 4. Live Model Testing Modal */}
+      {testingModel && (
+        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-stone-200 shadow-2xl max-w-xl w-full p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">{testingModel.vendor.logo}</span>
+                <div>
+                  <h3 className="font-extrabold text-sm text-stone-900">
+                    Live Model Test: {testingModel.name}
+                  </h3>
+                  <div className="text-[11px] text-stone-400 font-mono">{testingModel.id}</div>
+                </div>
+              </div>
+              <button
+                onClick={() => setTestingModel(null)}
+                className="text-stone-400 hover:text-stone-800 text-sm font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Test Prompt</label>
+                <textarea
+                  rows={3}
+                  value={testPrompt}
+                  onChange={(e) => setTestPrompt(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 outline-none focus:border-[#2F6BFF] text-stone-800 font-medium leading-relaxed resize-none"
+                />
+              </div>
+
+              {testResult && (
+                <div className="p-4 bg-stone-900 text-emerald-400 font-mono rounded-2xl text-xs leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap border border-stone-800 shadow-inner">
+                  {testResult}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-stone-100 flex items-center justify-between">
+              <span className="text-[10px] text-stone-400">Model endpoint: {testingModel.providerName}</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTestingModel(null)}
+                  className="px-4 py-2 bg-stone-100 text-stone-700 rounded-xl text-xs font-bold hover:bg-stone-200"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRunModelTest}
+                  disabled={isTestRunning}
+                  className="px-5 py-2 bg-[#2F6BFF] hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md disabled:opacity-50"
+                >
+                  {isTestRunning ? (
+                    <>
+                      <Spinner className="w-3.5 h-3.5 animate-spin" />
+                      <span>Testing Endpoint...</span>
+                    </>
+                  ) : (
+                    <>
+                      <PaperPlane className="w-3.5 h-3.5" />
+                      <span>Run Test Request</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Connection Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl border border-stone-200 shadow-2xl max-w-lg w-full p-6 space-y-6">

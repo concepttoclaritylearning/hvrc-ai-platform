@@ -7,7 +7,7 @@
 export const SERVERLESS_PROVIDERS = {
   nvidia: {
     id: "nvidia",
-    name: "NVIDIA NIM (Cloud Model Provider)",
+    name: "NVIDIA NIM (Free Public Models)",
     logo: "🟢",
     baseUrl: "/proxy/nvidia",
     modelsUrl: "/proxy/nvidia/models",
@@ -82,7 +82,7 @@ export async function validateApiKey(providerId, apiKey) {
 }
 
 /**
- * Fetch live available models dynamically 100% via Proxy Server.
+ * Fetch live FREE PUBLIC models dynamically via Proxy Server.
  */
 export async function fetchLiveModels(providerId, apiKey) {
   const provider = SERVERLESS_PROVIDERS[providerId];
@@ -108,7 +108,8 @@ export async function fetchLiveModels(providerId, apiKey) {
           id: m.id,
           name: m.name,
           context: `${Math.round((m.context || 128000) / 1000)}k`,
-          isFree: m.id.includes("free"),
+          isFree: true,
+          badge: "🟢 Free Public NIM Model",
           provider: provider.name,
           providerId
         }));
@@ -140,7 +141,7 @@ export async function fetchLiveModels(providerId, apiKey) {
           id,
           name: displayName,
           context: "128k",
-          isFree: false,
+          isFree: id.includes("free"),
           provider: provider.name,
           providerId
         };

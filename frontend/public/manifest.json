@@ -1,0 +1,13 @@
+{
+  "name": "HVRC.AI Workspace",
+  "short_name": "HVRC.AI",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "any"
+    }
+  ]
+}

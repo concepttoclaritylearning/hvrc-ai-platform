@@ -1,0 +1,5 @@
+<svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="36" height="36" rx="12" fill="#2F6BFF"/>
+  <path d="M20 10L12 21H19L16 30L24 19H17L20 10Z" fill="white"/>
+  <text x="44" y="25" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="20" fill="#1C1917">HVRC<tspan fill="#2F6BFF">.AI</tspan></text>
+</svg>

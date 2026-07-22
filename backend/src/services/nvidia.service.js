@@ -18,7 +18,8 @@ const MODEL_ALIAS_MAP = {
   "mistral-large-2": "mistralai/mistral-large-2-instruct",
   "mixtral-8x22b": "mistralai/mixtral-8x22b-instruct-v0.1",
   "gemma-2-27b": "google/gemma-2-27b-it",
-  "qwen2.5-72b": "qwen/qwen2.5-72b-instruct"
+  "qwen2.5-72b": "qwen/qwen2.5-72b-instruct",
+  "yi-large": "01-ai/yi-large"
 };
 
 /**
@@ -104,6 +105,11 @@ export class NvidiaService {
         const errJson = JSON.parse(errText);
         errorMessage = errJson.detail || errJson.message || errJson.error?.message || errText;
       } catch (e) {}
+
+      // Handle account function permission errors on NVIDIA NIM
+      if (errorMessage.includes("Not found for account") || res.status === 404) {
+        errorMessage = `Model "${resolvedModel}" is restricted or not enabled on your NVIDIA developer account tier. Please select a public NIM model like "meta/llama-3.3-70b-instruct" or "deepseek-ai/deepseek-r1" in the Model Hub.`;
+      }
 
       // Clean error normalization for client UI
       return {

@@ -22,7 +22,7 @@ import { useModel } from "@/ModelContext";
 
 export default function ProjectChat() {
   const { slug } = useParams();
-  const { activeModel, executeCompletion } = useModel();
+  const { activeModel, selectModel, executeCompletion } = useModel();
 
   // Dynamic user chat threads stored in localStorage
   const [threads, setThreads] = useState(() => {
@@ -301,6 +301,30 @@ export default function ProjectChat() {
                 >
                   {m.text}
                 </div>
+
+                {/* Quick Model Switcher on Account Restricted NIM Error */}
+                {m.role === "assistant" && m.text?.includes("NVIDIA NIM Error") && (
+                  <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-800 space-y-2">
+                    <div className="font-bold flex items-center gap-1.5">
+                      <Lightning className="w-4 h-4 text-amber-600" />
+                      <span>Account Permission Required for this NIM Endpoint</span>
+                    </div>
+                    <p className="text-[11px]">This model endpoint is restricted on your NVIDIA developer account tier. Click below to switch to a 100% verified public model:</p>
+                    <button
+                      onClick={() => {
+                        selectModel({
+                          id: "meta/llama-3.3-70b-instruct",
+                          name: "Llama 3.3 70B",
+                          providerId: "nvidia"
+                        });
+                      }}
+                      className="px-3.5 py-2 bg-[#2F6BFF] text-white font-bold rounded-xl text-xs flex items-center gap-1.5 hover:bg-blue-700 transition-colors shadow-2xs"
+                    >
+                      <Sparkle className="w-3.5 h-3.5" />
+                      <span>⚡ Switch to Llama 3.3 70B (Verified NIM Model)</span>
+                    </button>
+                  </div>
+                )}
 
                 {m.artifact && (
                   <div

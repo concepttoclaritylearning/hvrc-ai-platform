@@ -1,7 +1,7 @@
 # HVRC.AI — Next-Gen AI Operating System & Web Workspace
 
 <p align="center">
-  <img src="./frontend/public/hvrc-ai.png" alt="HVRC.AI Logo" width="180" />
+  <img src="./images/hvrc_logo.png" alt="HVRC.AI Brand Logo" width="220" />
 </p>
 
 <p align="center">

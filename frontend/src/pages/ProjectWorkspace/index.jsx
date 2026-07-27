@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import {
   FileCode,
@@ -46,7 +46,7 @@ import { AgentOrchestrator, WORKER_ROLES } from "@/engine/AgentOrchestrator";
 
 export default function ProjectWorkspace() {
   const { slug } = useParams();
-  const { activeModel, executeCompletion } = useModel();
+  const { activeModel, selectModel, executeCompletion } = useModel();
   const { capabilityMap, getModelForCapability } = useCapability();
 
   // Canvas View Mode: 'codebase' | 'preview' | '3d-studio' | 'task-board'
@@ -55,10 +55,49 @@ export default function ProjectWorkspace() {
   const [isExplorerOpen, setIsExplorerOpen] = useState(true);
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(true);
 
-  // Multimodal Modal States
-  const [show3DModal, setShow3DModal] = useState(false);
-  const [showImageStudio, setShowImageStudio] = useState(false);
-  const [showVideoStudio, setShowVideoStudio] = useState(false);
+  // Multimodal Generation Mode & Selected Capability Model Filtering
+  const [chatMode, setChatMode] = useState("chat"); // "chat" | "image" | "video" | "3d"
+  const [selectedChatModelId, setSelectedChatModelId] = useState("");
+
+  // Get deduplicated list of user's selected/assigned models across all OS roles + general active fallback
+  const userSelectedModels = useMemo(() => {
+    const assignedList = Object.values(capabilityMap || {}).filter(Boolean);
+    if (activeModel && !assignedList.some((m) => m.id === activeModel.id)) {
+      assignedList.unshift(activeModel);
+    }
+    const unique = [];
+    const seen = new Set();
+    for (const m of assignedList) {
+      if (!seen.has(m.id)) {
+        seen.add(m.id);
+        unique.push(m);
+      }
+    }
+    return unique;
+  }, [capabilityMap, activeModel]);
+
+  // Dynamically filter available selected models based on active chatMode
+  const availableChatModels = useMemo(() => {
+    if (chatMode === "image") {
+      const imgModels = userSelectedModels.filter((m) => m.id.toLowerCase().includes("image") || m.id.toLowerCase().includes("sdxl") || m.id.toLowerCase().includes("flux") || m.id === capabilityMap?.imageGenModel?.id || m.id === capabilityMap?.visionModel?.id);
+      return imgModels.length > 0 ? imgModels : [capabilityMap?.imageGenModel || { id: "stabilityai/sdxl-turbo", name: "SDXL Turbo", providerName: "NVIDIA NIM" }];
+    }
+    if (chatMode === "video") {
+      const vidModels = userSelectedModels.filter((m) => m.id.toLowerCase().includes("video") || m.id === capabilityMap?.videoGenModel?.id);
+      return vidModels.length > 0 ? vidModels : [capabilityMap?.videoGenModel || { id: "stabilityai/stable-video-diffusion", name: "Stable Video Diffusion", providerName: "NVIDIA NIM" }];
+    }
+    if (chatMode === "3d") {
+      const threeDModels = userSelectedModels.filter((m) => m.id.toLowerCase().includes("3d") || m.id.toLowerCase().includes("mesh") || m.id === capabilityMap?.threeDGenModel?.id);
+      return threeDModels.length > 0 ? threeDModels : [capabilityMap?.threeDGenModel || { id: "nvidia/edify-3d", name: "Edify 3D Mesh", providerName: "NVIDIA NIM" }];
+    }
+    return userSelectedModels.length > 0 ? userSelectedModels : [activeModel || { id: "meta/llama-3.3-70b-instruct", name: "Llama 3.3 70B", providerName: "NVIDIA NIM" }];
+  }, [chatMode, userSelectedModels, capabilityMap, activeModel]);
+
+  useEffect(() => {
+    if (availableChatModels.length > 0 && !availableChatModels.some((m) => m.id === selectedChatModelId)) {
+      setSelectedChatModelId(availableChatModels[0].id);
+    }
+  }, [availableChatModels, selectedChatModelId]);
 
   // Folder collapse state
   const [isSrcExpanded, setIsSrcExpanded] = useState(true);
@@ -438,35 +477,6 @@ export default function App() {
 
           <span className="text-stone-300">|</span>
           <span className="text-stone-500 font-mono text-[11px]">{activeFile?.name || "No file open"}</span>
-
-          {/* Multimodal Generation Toolbar */}
-          <div className="flex items-center gap-1 ml-4 bg-stone-100 p-0.5 rounded-xl border border-stone-200/60">
-            <button
-              onClick={() => setShow3DModal(true)}
-              className="px-2.5 py-1 bg-white hover:bg-stone-50 text-stone-800 rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-2xs border border-stone-200"
-            >
-              <Cube className="w-3.5 h-3.5 text-[#2F6BFF]" />
-              <span>3D WebGL Studio</span>
-            </button>
-            <button
-              onClick={() => setShowImageStudio(!showImageStudio)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 ${
-                showImageStudio ? "bg-blue-600 text-white" : "bg-white text-stone-800 hover:bg-stone-50 border border-stone-200"
-              }`}
-            >
-              <PaintBrush className="w-3.5 h-3.5 text-blue-500" />
-              <span>Image Studio</span>
-            </button>
-            <button
-              onClick={() => setShowVideoStudio(!showVideoStudio)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 ${
-                showVideoStudio ? "bg-purple-600 text-white" : "bg-white text-stone-800 hover:bg-stone-50 border border-stone-200"
-              }`}
-            >
-              <FilmStrip className="w-3.5 h-3.5 text-purple-500" />
-              <span>Video Studio</span>
-            </button>
-          </div>
         </div>
 
         {/* Center/Right: Viewport & Canvas Switcher */}
@@ -514,19 +524,6 @@ export default function App() {
           </button>
         </div>
       </div>
-
-      {/* Multimodal Generation Dropdown Drawers */}
-      {showImageStudio && (
-        <div className="p-4 bg-stone-100 border-b border-stone-200">
-          <ImageGenStudio onExportImage={(img) => applyCodeToWorkspace(`// Exported Image Asset: ${img.prompt}\n// URL: ${img.url}\n`)} />
-        </div>
-      )}
-
-      {showVideoStudio && (
-        <div className="p-4 bg-stone-100 border-b border-stone-200">
-          <VideoGenStudio onExportVideo={(vid) => applyCodeToWorkspace(`// Exported Motion Video Asset: ${vid.title}\n`)} />
-        </div>
-      )}
 
       {/* 2. Main Workspace Layout */}
       <div className="flex-1 flex overflow-hidden">
@@ -825,35 +822,101 @@ export default function App() {
               <div ref={chatMessagesEndRef} />
             </div>
 
-            {/* Input Bar */}
-            <div className="p-3 border-t border-stone-200/80 bg-white flex items-center gap-2">
-              <input
-                type="text"
-                placeholder="Ask Primary Agent or Co-Workers to build, test, review..."
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAiSend()}
-                disabled={isAiLoading}
-                className="flex-1 bg-stone-100/80 border border-stone-200 rounded-xl px-3 py-2 text-xs outline-none text-stone-800 focus:border-[#2F6BFF]"
-              />
-              <button onClick={handleAiSend} disabled={isAiLoading} className="p-2 bg-[#2F6BFF] text-white rounded-xl hover:bg-blue-700">
-                <PaperPlane className="w-4 h-4" />
-              </button>
+            {/* Multimodal AI Capability Hub & Studio Area */}
+            <div className="border-t border-stone-200/80 bg-white flex flex-col shrink-0">
+              {/* Row 1: Mode Selector Pill Bar + Filtered Model Selector Dropdown */}
+              <div className="px-3 py-2 border-b border-stone-100 flex items-center justify-between gap-2 bg-stone-50/60">
+                <div className="flex items-center gap-1">
+                  {[
+                    { id: "chat", label: "Chat", icon: <Robot className="w-3.5 h-3.5" /> },
+                    { id: "image", label: "Image Gen", icon: <PaintBrush className="w-3.5 h-3.5" /> },
+                    { id: "video", label: "Video Gen", icon: <FilmStrip className="w-3.5 h-3.5" /> },
+                    { id: "3d", label: "3D Studio", icon: <Cube className="w-3.5 h-3.5" /> }
+                  ].map((mode) => (
+                    <button
+                      key={mode.id}
+                      onClick={() => setChatMode(mode.id)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all ${
+                        chatMode === mode.id
+                          ? "bg-[#2F6BFF] text-white shadow-2xs"
+                          : "text-stone-600 hover:bg-stone-200/60"
+                      }`}
+                    >
+                      {mode.icon}
+                      <span>{mode.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Filtered Capability Hub Dropdown */}
+                <div className="flex items-center gap-1.5 max-w-[180px] sm:max-w-[220px]">
+                  <span className="text-[10px] text-stone-400 font-medium shrink-0 hidden sm:inline">Model:</span>
+                  <select
+                    value={selectedChatModelId}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedChatModelId(val);
+                      const modelObj = availableChatModels.find((m) => m.id === val);
+                      if (modelObj && selectModel) {
+                        selectModel(modelObj);
+                      }
+                    }}
+                    className="w-full bg-white border border-stone-200 rounded-lg px-2 py-1 text-[11px] font-semibold text-stone-800 outline-none focus:border-[#2F6BFF] truncate shadow-2xs"
+                  >
+                    {availableChatModels.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name || m.id} ({m.providerName || "AI Provider"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 2: Embedded Studio View (Conditional on chatMode) */}
+              {chatMode === "image" && (
+                <div className="max-h-96 overflow-y-auto p-3 bg-stone-100/60 border-b border-stone-200">
+                  <ImageGenStudio onExportImage={(img) => applyCodeToWorkspace(`// Exported Image Asset: ${img.prompt}\n// URL: ${img.url}\n`)} />
+                </div>
+              )}
+
+              {chatMode === "video" && (
+                <div className="max-h-96 overflow-y-auto p-3 bg-stone-100/60 border-b border-stone-200">
+                  <VideoGenStudio onExportVideo={(vid) => applyCodeToWorkspace(`// Exported Motion Video Asset: ${vid.title}\n`)} />
+                </div>
+              )}
+
+              {chatMode === "3d" && (
+                <div className="max-h-96 overflow-y-auto p-3 bg-stone-100/60 border-b border-stone-200">
+                  <ThreeDStudioModal
+                    isEmbedded={true}
+                    onExportToWorkspace={(asset) => applyCodeToWorkspace(`// Exported WebGL 3D Asset: ${asset.name}\n// Preset: ${asset.preset}\n`)}
+                  />
+                </div>
+              )}
+
+              {/* Row 3: Input Bar */}
+              <div className="p-3 bg-white flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder={
+                    chatMode === "chat"
+                      ? "Ask Primary Agent or Co-Workers to build, test, review..."
+                      : `Enter ${chatMode.toUpperCase()} prompt or instructions for assigned capability model...`
+                  }
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAiSend()}
+                  disabled={isAiLoading}
+                  className="flex-1 bg-stone-100/80 border border-stone-200 rounded-xl px-3 py-2 text-xs outline-none text-stone-800 focus:border-[#2F6BFF]"
+                />
+                <button onClick={handleAiSend} disabled={isAiLoading} className="p-2 bg-[#2F6BFF] text-white rounded-xl hover:bg-blue-700 transition-colors shadow-2xs">
+                  <PaperPlane className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
-
-      {/* WebGL 3D Studio Modal */}
-      {show3DModal && (
-        <ThreeDStudioModal
-          onClose={() => setShow3DModal(false)}
-          onExportToWorkspace={(asset) => {
-            setShow3DModal(false);
-            applyCodeToWorkspace(`// Exported WebGL 3D Asset: ${asset.name}\n// Preset: ${asset.preset}\n`);
-          }}
-        />
-      )}
     </div>
   );
 }

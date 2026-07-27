@@ -13,7 +13,7 @@ import {
   FolderPlus
 } from "@phosphor-icons/react";
 
-export default function ThreeDStudioModal({ asset, onClose, onExportToWorkspace }) {
+export default function ThreeDStudioModal({ asset, onClose, onExportToWorkspace, isEmbedded = false }) {
   const canvasRef = useRef(null);
   const [wireframe, setWireframe] = useState(false);
   const [rotationSpeed, setRotationSpeed] = useState(0.01);
@@ -51,134 +51,210 @@ export default function ThreeDStudioModal({ asset, onClose, onExportToWorkspace 
       isDragging = false;
     };
 
-    canvas.addEventListener("mousedown", handleMouseDown);
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
+    const handleMouseLeave = () => {
+      isDragging = false;
+    };
 
-    // Render 3D Wireframe / Solid Geometry Mesh Projection
-    const render3DFrame = () => {
+    canvas.addEventListener("mousedown", handleMouseDown);
+    canvas.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener("mouseup", handleMouseUp);
+    canvas.addEventListener("mouseleave", handleMouseLeave);
+
+    const project3D = (x, y, z, cx, cy, fov = 250, distance = 400) => {
+      const factor = fov / (distance + z);
+      return {
+        x: x * factor + cx,
+        y: y * factor + cy,
+        z: z
+      };
+    };
+
+    const rotateX = (x, y, z, angle) => {
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      return { x, y: y * cos - z * sin, z: y * sin + z * cos };
+    };
+
+    const rotateY = (x, y, z, angle) => {
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      return { x: x * cos + z * sin, y, z: -x * sin + z * cos };
+    };
+
+    const drawCube = (ctx, cx, cy, rx, ry, size, isWire, light) => {
+      const s = size / 2;
+      const vertices = [
+        { x: -s, y: -s, z: -s }, { x: s, y: -s, z: -s }, { x: s, y: s, z: -s }, { x: -s, y: s, z: -s },
+        { x: -s, y: -s, z: s }, { x: s, y: -s, z: s }, { x: s, y: s, z: s }, { x: -s, y: s, z: s }
+      ];
+
+      const rotated = vertices.map((v) => {
+        const r1 = rotateY(v.x, v.y, v.z, ry);
+        return rotateX(r1.x, r1.y, r1.z, rx);
+      });
+
+      const projected = rotated.map((v) => project3D(v.x, v.y, v.z, cx, cy));
+
+      const faces = [
+        { indices: [0, 1, 2, 3], normalZ: -1, color: [47, 107, 255] },
+        { indices: [5, 4, 7, 6], normalZ: 1, color: [59, 130, 246] },
+        { indices: [4, 0, 3, 7], normalZ: -1, color: [37, 99, 235] },
+        { indices: [1, 5, 6, 2], normalZ: 1, color: [96, 165, 250] },
+        { indices: [4, 5, 1, 0], normalZ: -1, color: [29, 78, 216] },
+        { indices: [3, 2, 6, 7], normalZ: 1, color: [147, 197, 253] }
+      ];
+
+      const sortedFaces = faces
+        .map((f) => {
+          const zAvg = (rotated[f.indices[0]].z + rotated[f.indices[1]].z + rotated[f.indices[2]].z + rotated[f.indices[3]].z) / 4;
+          return { ...f, zAvg };
+        })
+        .sort((a, b) => b.zAvg - a.zAvg);
+
+      sortedFaces.forEach((f) => {
+        ctx.beginPath();
+        ctx.moveTo(projected[f.indices[0]].x, projected[f.indices[0]].y);
+        for (let i = 1; i < 4; i++) {
+          ctx.lineTo(projected[f.indices[i]].x, projected[f.indices[i]].y);
+        }
+        ctx.closePath();
+
+        if (isWire) {
+          ctx.strokeStyle = "#60A5FA";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        } else {
+          const brightness = Math.max(0.3, Math.min(1.5, (1 - f.zAvg / 150) * light));
+          const [r, g, b] = f.color.map((c) => Math.min(255, Math.floor(c * brightness)));
+          ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+          ctx.fill();
+          ctx.strokeStyle = `rgba(255, 255, 255, 0.15)`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      });
+    };
+
+    const drawSphere = (ctx, cx, cy, rx, ry, radius, isWire, light) => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius * 0.8, 0, Math.PI * 2);
+      if (isWire) {
+        ctx.strokeStyle = "#A855F7";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        for (let i = 1; i < 5; i++) {
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, radius * 0.8, (radius * 0.8 * i) / 5, rx, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      } else {
+        const grad = ctx.createRadialGradient(cx - 20, cy - 20, 10, cx, cy, radius);
+        grad.addColorStop(0, "#C084FC");
+        grad.addColorStop(0.6, "#9333EA");
+        grad.addColorStop(1, "#581C87");
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+      ctx.restore();
+    };
+
+    const drawPyramid = (ctx, cx, cy, rx, ry, size, isWire, light) => {
+      const s = size / 1.6;
+      const vertices = [
+        { x: 0, y: -s * 1.2, z: 0 },
+        { x: -s, y: s, z: -s },
+        { x: s, y: s, z: -s },
+        { x: s, y: s, z: s },
+        { x: -s, y: s, z: s }
+      ];
+
+      const rotated = vertices.map((v) => {
+        const r1 = rotateY(v.x, v.y, v.z, ry);
+        return rotateX(r1.x, r1.y, r1.z, rx);
+      });
+
+      const projected = rotated.map((v) => project3D(v.x, v.y, v.z, cx, cy));
+
+      const faces = [
+        { indices: [0, 1, 2], color: [245, 158, 11] },
+        { indices: [0, 2, 3], color: [217, 119, 6] },
+        { indices: [0, 3, 4], color: [180, 83, 9] },
+        { indices: [0, 4, 1], color: [251, 191, 36] },
+        { indices: [4, 3, 2, 1], color: [146, 64, 14] }
+      ];
+
+      const sortedFaces = faces
+        .map((f) => {
+          const zAvg = f.indices.reduce((sum, idx) => sum + rotated[idx].z, 0) / f.indices.length;
+          return { ...f, zAvg };
+        })
+        .sort((a, b) => b.zAvg - a.zAvg);
+
+      sortedFaces.forEach((f) => {
+        ctx.beginPath();
+        ctx.moveTo(projected[f.indices[0]].x, projected[f.indices[0]].y);
+        for (let i = 1; i < f.indices.length; i++) {
+          ctx.lineTo(projected[f.indices[i]].x, projected[f.indices[i]].y);
+        }
+        ctx.closePath();
+
+        if (isWire) {
+          ctx.strokeStyle = "#FBBF24";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        } else {
+          const brightness = Math.max(0.3, Math.min(1.5, (1 - f.zAvg / 150) * light));
+          const [r, g, b] = f.color.map((c) => Math.min(255, Math.floor(c * brightness)));
+          ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+          ctx.fill();
+          ctx.strokeStyle = `rgba(255, 255, 255, 0.2)`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      });
+    };
+
+    const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const cx = canvas.width / 2;
       const cy = canvas.height / 2;
-      const scale = 140;
-
-      angleY += rotationSpeed;
-
-      // Define Vertices based on selected 3D asset shape
-      let vertices = [];
-      let edges = [];
-
-      if (activePreset === "sphere" || activePreset === "character") {
-        // Icosahedron / Sphere approximation
-        const t = (1 + Math.sqrt(5)) / 2;
-        vertices = [
-          [-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0],
-          [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t],
-          [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]
-        ].map(([x, y, z]) => [x * 0.6, y * 0.6, z * 0.6]);
-
-        edges = [
-          [0,11],[0,5],[0,1],[0,7],[0,10],[1,5],[5,11],[11,10],[10,7],[7,1],
-          [3,9],[3,4],[3,2],[3,6],[3,8],[4,9],[9,8],[8,6],[6,2],[2,4],
-          [4,5],[4,11],[2,10],[2,7],[6,7],[6,1],[8,1],[8,5],[9,5],[9,11]
-        ];
-      } else if (activePreset === "pyramid" || activePreset === "building") {
-        vertices = [
-          [0, 1.2, 0], [-1, -1, 1], [1, -1, 1], [1, -1, -1], [-1, -1, -1]
-        ];
-        edges = [
-          [0,1],[0,2],[0,3],[0,4],
-          [1,2],[2,3],[3,4],[4,1]
-        ];
-      } else {
-        // Default 3D Cube / Asset Mesh
-        vertices = [
-          [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
-          [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]
-        ];
-        edges = [
-          [0,1],[1,2],[2,3],[3,0],
-          [4,5],[5,6],[6,7],[7,4],
-          [0,4],[1,5],[2,6],[3,7]
-        ];
+      if (!isDragging) {
+        angleY += rotationSpeed;
       }
-
-      // Rotate Vertices
-      const projected = vertices.map(([x, y, z]) => {
-        // Rotate Y
-        let x1 = x * Math.cos(angleY) - z * Math.sin(angleY);
-        let z1 = x * Math.sin(angleY) + z * Math.cos(angleY);
-
-        // Rotate X
-        let y2 = y * Math.cos(angleX) - z1 * Math.sin(angleX);
-        let z2 = y * Math.sin(angleX) + z1 * Math.cos(angleX);
-
-        // Perspective Projection
-        const fov = 3.5;
-        const pz = fov / (fov + z2);
-        return {
-          x: cx + x1 * scale * pz,
-          y: cy + y2 * scale * pz,
-          z: z2
-        };
-      });
-
-      // Draw Edges
-      ctx.lineWidth = wireframe ? 1.5 : 2.5;
-      edges.forEach(([i, j]) => {
-        const p1 = projected[i];
-        const p2 = projected[j];
-        if (!p1 || !p2) return;
-
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-
-        const lightShade = Math.floor(180 * lightIntensity);
-        if (wireframe) {
-          ctx.strokeStyle = `rgba(47, 107, 255, 0.8)`;
-        } else {
-          ctx.strokeStyle = `rgb(${Math.min(255, lightShade)}, ${Math.min(255, lightShade + 20)}, 255)`;
-        }
-        ctx.stroke();
-      });
-
-      // Draw Joint Vertices
-      projected.forEach((p) => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, wireframe ? 2 : 4, 0, Math.PI * 2);
-        ctx.fillStyle = wireframe ? "#2F6BFF" : "#10B981";
-        ctx.fill();
-      });
-
-      animationFrameId = requestAnimationFrame(render3DFrame);
+      const size = 160;
+      if (activePreset === "cube") {
+        drawCube(ctx, cx, cy, angleX, angleY, size, wireframe, lightIntensity);
+      } else if (activePreset === "sphere") {
+        drawSphere(ctx, cx, cy, angleX, angleY, size * 0.75, wireframe, lightIntensity);
+      } else if (activePreset === "torus") {
+        drawTorus(ctx, cx, cy, angleX, angleY, size * 0.6, wireframe, lightIntensity);
+      } else {
+        drawPyramid(ctx, cx, cy, angleX, angleY, size, wireframe, lightIntensity);
+      }
+      animationFrameId = requestAnimationFrame(render);
     };
-
-    render3DFrame();
+    render();
 
     return () => {
       cancelAnimationFrame(animationFrameId);
       canvas.removeEventListener("mousedown", handleMouseDown);
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      canvas.removeEventListener("mousemove", handleMouseMove);
+      canvas.removeEventListener("mouseup", handleMouseUp);
+      canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, [wireframe, rotationSpeed, lightIntensity, activePreset]);
 
-  const handleExport = () => {
-    setExported(true);
-    if (onExportToWorkspace) {
-      onExportToWorkspace({
-        name: `${asset?.title || activePreset}_mesh.glb`,
-        type: "3d-asset",
-        preset: activePreset,
-        content: `// HVRC 3D Asset Binary Matrix\n// Format: GLB / OBJ\n// Preset: ${activePreset}\n`
-      });
-    }
-  };
+  const containerClass = isEmbedded
+    ? "w-full bg-stone-900 border border-stone-800 rounded-2xl shadow-md overflow-hidden text-stone-200 font-sans my-2"
+    : "fixed inset-0 bg-stone-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 font-sans";
+  const innerClass = isEmbedded
+    ? "flex flex-col overflow-hidden"
+    : "bg-stone-900 border border-stone-800 rounded-3xl shadow-2xl max-w-4xl w-full flex flex-col overflow-hidden text-stone-200";
 
   return (
-    <div className="fixed inset-0 bg-stone-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 font-sans">
-      <div className="bg-stone-900 border border-stone-800 rounded-3xl shadow-2xl max-w-4xl w-full flex flex-col overflow-hidden text-stone-200">
+    <div className={containerClass}>
+      <div className={innerClass}>
         {/* Top Header */}
         <div className="p-4 bg-stone-900 border-b border-stone-800 flex items-center justify-between">
           <div className="flex items-center gap-3">

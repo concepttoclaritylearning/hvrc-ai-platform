@@ -107,8 +107,11 @@ export class NvidiaService {
       } catch (e) {}
 
       // Handle account function permission errors on NVIDIA NIM
-      if (errorMessage.includes("Not found for account") || res.status === 404) {
-        errorMessage = `Model "${resolvedModel}" is restricted or not enabled on your NVIDIA developer account tier. Please select a public NIM model like "meta/llama-3.3-70b-instruct" or "deepseek-ai/deepseek-r1" in the Model Hub.`;
+      const isNonChat = resolvedModel.includes("embed") || resolvedModel.includes("rerank") || resolvedModel.includes("parakeet") || resolvedModel.includes("riva") || resolvedModel.includes("edify") || resolvedModel.includes("guard");
+      if (isNonChat || res.status === 400 || res.status === 422) {
+        errorMessage = `Endpoint Mismatch: Model "${resolvedModel}" is an embedding, audio, image, or guardrail NIM model. It does not support standard text chat completions (/v1/chat/completions). Please assign this model to its specialized OS Role in the Models Hub!`;
+      } else if (errorMessage.includes("Not found for account") || res.status === 404 || res.status === 403) {
+        errorMessage = `Account Tier Restriction: Model "${resolvedModel}" is restricted or requires enterprise access on your NVIDIA account tier. Please select a Free Public NIM model like "meta/llama-3.3-70b-instruct" or "deepseek-ai/deepseek-r1" in the Model Hub.`;
       }
 
       // Clean error normalization for client UI

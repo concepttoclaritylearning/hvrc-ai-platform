@@ -85,6 +85,13 @@ export class OpenAiCompatibleProvider extends BaseProvider {
       const supportsReasoning = idLower.includes("r1") || idLower.includes("o1") || idLower.includes("o3") || idLower.includes("reasoning") || idLower.includes("thinking");
       const supportsStreaming = true;
 
+      const isEmbedding = idLower.includes("embed") || idLower.includes("rerank");
+      const isSpeech = idLower.includes("parakeet") || idLower.includes("riva") || idLower.includes("tts") || idLower.includes("whisper") || idLower.includes("audio") || idLower.includes("speech");
+      const isImage = idLower.includes("edify-image") || idLower.includes("sdxl") || idLower.includes("flux") || idLower.includes("dall-e") || idLower.includes("stable-diffusion") || idLower.includes("image");
+      const is3D = idLower.includes("edify-3d") || idLower.includes("mesh") || idLower.includes("3d");
+      const isGuardrail = idLower.includes("guard") || idLower.includes("safety");
+      const isChat = !isEmbedding && !isSpeech && !isImage && !is3D && !isGuardrail;
+
       return {
         id,
         name,
@@ -93,6 +100,12 @@ export class OpenAiCompatibleProvider extends BaseProvider {
         supportsReasoning,
         supportsStreaming,
         supportsTools: true,
+        isChat,
+        isEmbedding,
+        isSpeech,
+        isImage,
+        is3D,
+        isGuardrail,
         ownedBy: m.owned_by || m.permission?.[0]?.organization || "provider"
       };
     });
@@ -130,6 +143,10 @@ export class OpenAiCompatibleProvider extends BaseProvider {
         const errJson = JSON.parse(errText);
         errorMessage = errJson.detail || errJson.message || errJson.error?.message || errText;
       } catch (e) {}
+
+      if (errorMessage.includes("Not found for account") || res.status === 404) {
+        errorMessage = `Model "${model}" is currently restricted, offline, or not enabled on your API key account tier at ${this.baseUrl}. Please select a different public model (e.g. "meta/llama-3.3-70b-instruct" or "deepseek-ai/deepseek-r1").`;
+      }
 
       const err = new Error(errorMessage || `Provider HTTP ${res.status}`);
       err.status = res.status;

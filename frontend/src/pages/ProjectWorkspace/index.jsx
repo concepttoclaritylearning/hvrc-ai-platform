@@ -765,6 +765,7 @@ export default function App() {
                       <body>
                         <div id="root"></div>
                         <script type="text/babel">
+                          const { useState, useEffect, useRef, useCallback, useMemo } = React;
                           ${editorContent.replace(/import React.*from "react";/, "").replace(/export default function/, "function")}
                           ReactDOM.createRoot(document.getElementById('root')).render(<App />);
                         </script>

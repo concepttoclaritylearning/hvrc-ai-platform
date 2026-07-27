@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lightning, ArrowRight, CloudCheck, Lock, ArrowLeft } from "@phosphor-icons/react";
 import { signInWithGoogle } from "@/utils/supabase";
+import System from "@/models/system";
 
 const isSupabaseConfigured =
   import.meta.env.VITE_SUPABASE_URL &&

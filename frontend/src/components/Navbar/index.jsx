@@ -25,6 +25,13 @@ export default function Navbar({ onOpenSearch, projects = [], activeProject, onS
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState([
+    { id: 1, title: "System Ready", time: "Just now", desc: "HVRC.AI Zero-Server Gateway is connected and active.", unread: true },
+    { id: 2, title: "Cloud Backup", time: "10 mins ago", desc: "Google Drive auto-sync is healthy and up-to-date.", unread: true },
+    { id: 3, title: "BYOK Providers", time: "1 hour ago", desc: "Model discovery updated across OpenRouter, NVIDIA, and Groq.", unread: false }
+  ]);
+
   const pinnedModels = getPinnedModelsList();
 
   return (
@@ -191,10 +198,60 @@ export default function Navbar({ onOpenSearch, projects = [], activeProject, onS
         </div>
 
         {/* Notifications Icon */}
-        <button className="p-2 rounded-xl text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors relative">
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#2F6BFF]"></span>
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="p-2 rounded-xl text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors relative"
+            title="Notifications"
+          >
+            <Bell className="w-4 h-4" />
+            {unreadNotifications.some((n) => n.unread) && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#2F6BFF]"></span>
+            )}
+          </button>
+
+          {showNotifications && (
+            <div
+              className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-stone-200/80 py-3 z-50 animate-fade-in font-sans"
+              onMouseLeave={() => setShowNotifications(false)}
+            >
+              <div className="px-4 pb-2 border-b border-stone-100 flex items-center justify-between">
+                <span className="text-xs font-bold text-stone-900">Notifications</span>
+                {unreadNotifications.some((n) => n.unread) && (
+                  <button
+                    onClick={() =>
+                      setUnreadNotifications((prev) => prev.map((n) => ({ ...n, unread: false })))
+                    }
+                    className="text-[10px] font-bold text-[#2F6BFF] hover:underline"
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </div>
+
+              <div className="max-h-64 overflow-y-auto py-1">
+                {unreadNotifications.length > 0 ? (
+                  unreadNotifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className={`px-4 py-2.5 hover:bg-stone-50 transition-colors border-b border-stone-50 last:border-none ${
+                        n.unread ? "bg-blue-50/30" : ""
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-xs font-bold text-stone-900">{n.title}</span>
+                        <span className="text-[10px] text-stone-400 font-mono">{n.time}</span>
+                      </div>
+                      <p className="text-[11px] text-stone-500 leading-snug">{n.desc}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-xs text-stone-400">No notifications</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Profile Dropdown */}
         <div className="relative">

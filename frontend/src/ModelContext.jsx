@@ -1,12 +1,15 @@
 import React, { createContext, useContext } from "react";
 import { ProviderProvider, useProviders } from "@/context/ProviderContext";
+import { CapabilityProvider } from "@/context/CapabilityContext";
 
 export const ModelContext = createContext();
 
 export function ModelProvider({ children }) {
   return (
     <ProviderProvider>
-      <ModelContextBridge>{children}</ModelContextBridge>
+      <CapabilityProvider>
+        <ModelContextBridge>{children}</ModelContextBridge>
+      </CapabilityProvider>
     </ProviderProvider>
   );
 }
@@ -58,9 +61,8 @@ function ModelContextBridge({ children }) {
     handleSelectModel,
     executeCompletion,
     providers,
-    modelsMap: {},
-    refreshModels,
-    getPinnedModelsList
+    getPinnedModelsList,
+    refreshModels
   };
 
   return <ModelContext.Provider value={contextValue}>{children}</ModelContext.Provider>;
@@ -69,7 +71,7 @@ function ModelContextBridge({ children }) {
 export function useModel() {
   const context = useContext(ModelContext);
   if (!context) {
-    return useProviders();
+    throw new Error("useModel must be used within a ModelProvider");
   }
   return context;
 }

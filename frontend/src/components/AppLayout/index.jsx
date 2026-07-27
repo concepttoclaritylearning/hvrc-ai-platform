@@ -7,6 +7,17 @@ export default function AppLayout({ children, activeProject, onSelectProject, pr
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
     <div className="h-screen w-screen flex flex-col bg-[#FAF8F4] overflow-hidden select-none font-sans text-stone-800">
       {/* Top Navbar */}

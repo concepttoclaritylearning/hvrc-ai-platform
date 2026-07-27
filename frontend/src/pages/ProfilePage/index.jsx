@@ -9,12 +9,24 @@ export default function ProfilePage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState("Just now");
 
-  const handleSyncNow = () => {
-    setIsSyncing(true);
-    setTimeout(() => {
-      setIsSyncing(false);
-      setLastSyncTime(new Date().toLocaleTimeString());
-    }, 1000);
+  const [profileName, setProfileName] = useState(user?.username || user?.name || "HVRC Developer");
+  const [profileEmail, setProfileEmail] = useState(user?.email || "user@hvrc.ai");
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [tempName, setTempName] = useState("");
+  const [tempEmail, setTempEmail] = useState("");
+
+  const handleOpenEdit = () => {
+    setTempName(profileName);
+    setTempEmail(profileEmail);
+    setShowEditModal(true);
+  };
+
+  const handleSaveProfile = (e) => {
+    e.preventDefault();
+    if (!tempName.trim()) return;
+    setProfileName(tempName.trim());
+    setProfileEmail(tempEmail.trim() || "user@hvrc.ai");
+    setShowEditModal(false);
   };
 
   return (
@@ -28,21 +40,68 @@ export default function ProfilePage() {
       <div className="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-2xs flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-stone-900 text-white font-bold text-xl flex items-center justify-center shadow-md">
-            {user?.username?.[0]?.toUpperCase() || "H"}
+            {profileName?.[0]?.toUpperCase() || "H"}
           </div>
           <div>
-            <h2 className="text-lg font-bold text-stone-900">{user?.username || "HVRC Developer"}</h2>
-            <p className="text-xs text-stone-400">{user?.email || "user@hvrc.ai"}</p>
+            <h2 className="text-lg font-bold text-stone-900">{profileName}</h2>
+            <p className="text-xs text-stone-400">{profileEmail}</p>
             <span className="text-[10px] font-bold text-[#2F6BFF] bg-blue-50 px-2.5 py-0.5 rounded-full inline-block mt-2">
               Google Authenticated
             </span>
           </div>
         </div>
 
-        <button className="px-4 py-2 border border-stone-200 rounded-xl text-xs font-semibold text-stone-700 hover:bg-stone-50">
+        <button
+          onClick={handleOpenEdit}
+          className="px-4 py-2 border border-stone-200 rounded-xl text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-colors"
+        >
           Edit Profile
         </button>
       </div>
+
+      {/* Edit Profile Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-stone-200 space-y-4">
+            <h3 className="text-base font-bold text-stone-900">Edit Profile Details</h3>
+            <form onSubmit={handleSaveProfile} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Display Name</label>
+                <input
+                  type="text"
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 outline-none text-stone-800 font-medium"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Email Address</label>
+                <input
+                  type="email"
+                  value={tempEmail}
+                  onChange={(e) => setTempEmail(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 outline-none text-stone-800 font-medium"
+                />
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 rounded-xl font-semibold text-stone-600 hover:bg-stone-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#2F6BFF] text-white font-bold rounded-xl hover:bg-blue-700 shadow-md"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Google Drive Integration Card */}
       <div className="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-2xs space-y-4">

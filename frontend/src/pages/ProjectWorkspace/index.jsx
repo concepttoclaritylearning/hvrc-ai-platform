@@ -37,9 +37,6 @@ import {
 
 import { useModel } from "@/ModelContext";
 import { useCapability } from "@/context/CapabilityContext";
-import ThreeDStudioModal from "@/components/MultimodalStudio/ThreeDStudioModal";
-import ImageGenStudio from "@/components/MultimodalStudio/ImageGenStudio";
-import VideoGenStudio from "@/components/MultimodalStudio/VideoGenStudio";
 import TaskBoard from "@/components/TaskBoard";
 import { BackgroundExecutionEngine } from "@/engine/BackgroundExecutionEngine";
 import { AgentOrchestrator, WORKER_ROLES } from "@/engine/AgentOrchestrator";
@@ -49,14 +46,14 @@ export default function ProjectWorkspace() {
   const { activeModel, selectModel, executeCompletion } = useModel();
   const { capabilityMap, getModelForCapability } = useCapability();
 
-  // Canvas View Mode: 'codebase' | 'preview' | '3d-studio' | 'task-board'
+  // Canvas View Mode: 'codebase' | 'preview' | 'task-board'
   const [mainCanvasView, setMainCanvasView] = useState("codebase");
   const [previewDevice, setPreviewDevice] = useState("desktop");
   const [isExplorerOpen, setIsExplorerOpen] = useState(true);
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(true);
 
-  // Multimodal Generation Mode & Selected Capability Model Filtering
-  const [chatMode, setChatMode] = useState("chat"); // "chat" | "image" | "video" | "3d"
+  // Active Multi-Agent Role in Workspace Chat
+  const [activeAgentRole, setActiveAgentRole] = useState("primary"); // "primary" | "reviewer" | "tester" | "bughunter" | "writer" | "architect"
   const [selectedChatModelId, setSelectedChatModelId] = useState("");
 
   // Get deduplicated list of user's selected/assigned models across all OS roles + general active fallback
@@ -73,31 +70,14 @@ export default function ProjectWorkspace() {
         unique.push(m);
       }
     }
-    return unique;
+    return unique.length > 0 ? unique : [activeModel || { id: "meta/llama-3.3-70b-instruct", name: "Llama 3.3 70B", providerName: "NVIDIA NIM" }];
   }, [capabilityMap, activeModel]);
 
-  // Dynamically filter available selected models based on active chatMode
-  const availableChatModels = useMemo(() => {
-    if (chatMode === "image") {
-      const imgModels = userSelectedModels.filter((m) => m.id.toLowerCase().includes("image") || m.id.toLowerCase().includes("sdxl") || m.id.toLowerCase().includes("flux") || m.id === capabilityMap?.imageGenModel?.id || m.id === capabilityMap?.visionModel?.id);
-      return imgModels.length > 0 ? imgModels : [capabilityMap?.imageGenModel || { id: "stabilityai/sdxl-turbo", name: "SDXL Turbo", providerName: "NVIDIA NIM" }];
-    }
-    if (chatMode === "video") {
-      const vidModels = userSelectedModels.filter((m) => m.id.toLowerCase().includes("video") || m.id === capabilityMap?.videoGenModel?.id);
-      return vidModels.length > 0 ? vidModels : [capabilityMap?.videoGenModel || { id: "stabilityai/stable-video-diffusion", name: "Stable Video Diffusion", providerName: "NVIDIA NIM" }];
-    }
-    if (chatMode === "3d") {
-      const threeDModels = userSelectedModels.filter((m) => m.id.toLowerCase().includes("3d") || m.id.toLowerCase().includes("mesh") || m.id === capabilityMap?.threeDGenModel?.id);
-      return threeDModels.length > 0 ? threeDModels : [capabilityMap?.threeDGenModel || { id: "nvidia/edify-3d", name: "Edify 3D Mesh", providerName: "NVIDIA NIM" }];
-    }
-    return userSelectedModels.length > 0 ? userSelectedModels : [activeModel || { id: "meta/llama-3.3-70b-instruct", name: "Llama 3.3 70B", providerName: "NVIDIA NIM" }];
-  }, [chatMode, userSelectedModels, capabilityMap, activeModel]);
-
   useEffect(() => {
-    if (availableChatModels.length > 0 && !availableChatModels.some((m) => m.id === selectedChatModelId)) {
-      setSelectedChatModelId(availableChatModels[0].id);
+    if (userSelectedModels.length > 0 && !userSelectedModels.some((m) => m.id === selectedChatModelId)) {
+      setSelectedChatModelId(userSelectedModels[0].id);
     }
-  }, [availableChatModels, selectedChatModelId]);
+  }, [userSelectedModels, selectedChatModelId]);
 
   // Folder collapse state
   const [isSrcExpanded, setIsSrcExpanded] = useState(true);
@@ -134,14 +114,14 @@ export default function App() {
               HVRC AI Operating System Platform
             </h1>
             <p style={{ color: "#78716C", fontSize: "14px", margin: 0, lineHeight: 1.5 }}>
-              Multimodal 3D WebGL Studio, Multi-Agent Runtimes, AI Task Synchronizer, and Autonomous Background Engine.
+              Universal Model Gateway (460+ LLMs), Multi-Agent Runtimes, AI Task Synchronizer, and Autonomous Background Engine.
             </p>
           </div>
         </div>
 
         {/* Feature Navigation Tabs */}
         <div style={{ display: "flex", gap: "8px", background: "#F5F5F4", padding: "6px", borderRadius: "16px", marginBottom: "24px" }}>
-          {["overview", "multimodal", "multi-agent"].map((tab) => (
+          {["overview", "multi-agent", "swarm-engine"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -169,42 +149,37 @@ export default function App() {
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <div style={{ padding: "20px", background: "#FAF8F4", borderRadius: "18px", border: "1px solid #F5F5F4" }}>
               <div style={{ fontSize: "12px", fontWeight: "800", color: "#2F6BFF", textTransform: "uppercase", marginBottom: "6px" }}>OS Layer 1</div>
-              <div style={{ fontSize: "16px", fontWeight: "800", color: "#1C1917" }}>Multimodal AI Capability Hub</div>
+              <div style={{ fontSize: "16px", fontWeight: "800", color: "#1C1917" }}>Universal LLM Gateway (460+ Models)</div>
               <div style={{ fontSize: "13px", color: "#78716C", marginTop: "4px", lineHeight: 1.5 }}>
-                Multi-model activation per project for Reasoning, Coding, Reviewing, Image, Video, and 3D Asset generation.
+                Multi-model activation for Reasoning, Co-Working Coding, Reviewing, Architecture, and Testing.
               </div>
             </div>
 
             <div style={{ padding: "20px", background: "#FAF8F4", borderRadius: "18px", border: "1px solid #F5F5F4" }}>
               <div style={{ fontSize: "12px", fontWeight: "800", color: "#10B981", textTransform: "uppercase", marginBottom: "6px" }}>OS Layer 2</div>
-              <div style={{ fontSize: "16px", fontWeight: "800", color: "#1C1917" }}>Autonomous Background Engine</div>
+              <div style={{ fontSize: "16px", fontWeight: "800", color: "#1C1917" }}>Autonomous Background Supervision Engine</div>
               <div style={{ fontSize: "13px", color: "#78716C", marginTop: "4px", lineHeight: 1.5 }}>
-                Background worker supervision executing periodic codebase quality audits and todo synchronization.
+                Background worker supervision executing periodic codebase quality audits and task synchronization.
               </div>
             </div>
           </div>
         )}
 
-        {activeTab === "multimodal" && (
-          <div style={{ padding: "20px", background: "#F0FDF4", borderRadius: "18px", border: "1px solid #DCFCE7", color: "#166534", fontSize: "13px", lineHeight: 1.6 }}>
-            <strong>Multimodal Asset Pipelines:</strong>
-            <ul style={{ margin: "10px 0 0 18px", padding: 0 }}>
-              <li>WebGL 3D Asset Studio (GLB, OBJ, Mesh Inspection, Orbit Controls)</li>
-              <li>Native Image Generation (Flux, Pollinations, UI Mockup Generator)</li>
-              <li>Async Video Synthesis Engine (Motion graphics &amp; UI demos)</li>
-            </ul>
+        {activeTab === "multi-agent" && (
+          <div style={{ padding: "20px", background: "#FEFCE8", borderRadius: "18px", border: "1px solid #FEF08A", color: "#854D0E", fontSize: "13px", lineHeight: 1.6 }}>
+            <strong>Parallel Co-Working AI Agents:</strong> Primary Orchestrator + Code Reviewer, Test Engineer, Documentation Writer, and Bug Hunter Workers.
           </div>
         )}
 
-        {activeTab === "multi-agent" && (
-          <div style={{ padding: "20px", background: "#FEFCE8", borderRadius: "18px", border: "1px solid #FEF08A", color: "#854D0E", fontSize: "13px" }}>
-            <strong>Parallel Co-Working AI Agents:</strong> Primary Orchestrator + Code Reviewer, Test Engineer, Documentation Writer, and Bug Hunter Workers.
+        {activeTab === "swarm-engine" && (
+          <div style={{ padding: "20px", background: "#F0FDF4", borderRadius: "18px", border: "1px solid #DCFCE7", color: "#166534", fontSize: "13px", lineHeight: 1.6 }}>
+            <strong>Autonomous Swarm Engine:</strong> Background agents collaborate to refactor code, fix lint diagnostics, and write test suites automatically.
           </div>
         )}
 
         {/* Footer Interaction */}
         <div style={{ marginTop: "28px", paddingTop: "20px", borderTop: "1px solid #F5F5F4", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: "12px", color: "#A8A29E", fontWeight: "600" }}>HVRC.AI OS v3.0 • Browser-First Environment</span>
+          <span style={{ fontSize: "12px", color: "#A8A29E", fontWeight: "600" }}>HVRC.AI OS v3.0 • Zero-Server Architecture</span>
           <button
             onClick={() => setLikes(likes + 1)}
             style={{ background: "#2F6BFF", color: "#ffffff", border: "none", padding: "10px 20px", borderRadius: "12px", cursor: "pointer", fontWeight: "bold", fontSize: "13px" }}
@@ -229,7 +204,7 @@ export default function App() {
       isDir: true,
       children: [
         { name: "logo.png", isDir: false, content: "[Image Binary Data]" },
-        { name: "3d_cube.glb", isDir: false, content: "// GLB Binary 3D Mesh Asset" }
+        { name: "schema.json", isDir: false, content: "{\n  \"version\": \"3.0.0\"\n}" }
       ]
     },
     {
@@ -250,7 +225,7 @@ export default function App() {
   const [terminalLogs, setTerminalLogs] = useState([
     { type: "cmd", text: "hvrc-os init --mode full-platform" },
     { type: "info", text: "[HVRC OS Kernel] Multi-Agent Execution Engine Active." },
-    { type: "info", text: "[Vite] Hot Module Replacement (HMR) active. WebGL Studio Ready." }
+    { type: "info", text: "[Vite] Hot Module Replacement (HMR) active. Live Sandbox Ready." }
   ]);
   const [terminalInput, setTerminalInput] = useState("");
 
@@ -436,9 +411,22 @@ export default function App() {
     setIsAiLoading(true);
 
     try {
-      const codingModel = getModelForCapability("codingModel");
+      let roleSystemPrompt = `You are Primary AI Orchestrator inside HVRC.AI OS. Active File: ${activeFile?.name || "App.jsx"}. Help user build, refactor, and review clean React code inside \`\`\`jsx ... \`\`\` blocks.`;
+
+      if (activeAgentRole === "reviewer") {
+        roleSystemPrompt = `You are Code Reviewer Worker. Audit the code for security, patterns, performance, and best practices. Provide structured bullet points and clean diffs.`;
+      } else if (activeAgentRole === "tester") {
+        roleSystemPrompt = `You are Test Engineer Worker. Generate complete Vitest / Jest unit tests and assertions for ${activeFile?.name || "App.jsx"}.`;
+      } else if (activeAgentRole === "bughunter") {
+        roleSystemPrompt = `You are Bug Hunter Worker. Analyze diagnostics, runtime stack traces, and null safety. Provide exact code fixes in \`\`\`jsx ... \`\`\` blocks.`;
+      } else if (activeAgentRole === "writer") {
+        roleSystemPrompt = `You are Documentation Specialist Worker. Generate clean markdown specs, README, and API documentation.`;
+      } else if (activeAgentRole === "architect") {
+        roleSystemPrompt = `You are System Architect Worker. Enforce clean architecture, modularity, state flow, and design patterns.`;
+      }
+
       const res = await executeCompletion([
-        { role: "system", content: `You are Primary AI Orchestrator inside HVRC.AI OS. Active File: ${activeFile?.name}. Write full React JSX code inside \`\`\`jsx ... \`\`\` blocks.` },
+        { role: "system", content: roleSystemPrompt },
         ...aiMessages.map((m) => ({ role: m.role, content: m.text })),
         { role: "user", content: userText }
       ]);
@@ -447,7 +435,7 @@ export default function App() {
       setAiMessages((prev) => [...prev, { role: "assistant", text: aiText }]);
 
       const extracted = extractCodeBlock(aiText);
-      if (extracted) {
+      if (extracted && (activeAgentRole === "primary" || activeAgentRole === "bughunter")) {
         applyCodeToWorkspace(extracted, "App.jsx");
       }
     } catch (err) {
@@ -822,48 +810,50 @@ export default function App() {
               <div ref={chatMessagesEndRef} />
             </div>
 
-            {/* Multimodal AI Capability Hub & Studio Area */}
+            {/* Multi-Agent Swarm & Co-Worker Selection Area */}
             <div className="border-t border-stone-200/80 bg-white flex flex-col shrink-0">
-              {/* Row 1: Mode Selector Pill Bar + Filtered Model Selector Dropdown */}
-              <div className="px-3 py-2 border-b border-stone-100 flex items-center justify-between gap-2 bg-stone-50/60">
-                <div className="flex items-center gap-1">
+              {/* Row 1: Agent Role Pills + Synchronized Model Selector */}
+              <div className="px-3 py-2 border-b border-stone-100 flex items-center justify-between gap-2 bg-stone-50/70 overflow-x-auto">
+                <div className="flex items-center gap-1 shrink-0">
                   {[
-                    { id: "chat", label: "Chat", icon: <Robot className="w-3.5 h-3.5" /> },
-                    { id: "image", label: "Image Gen", icon: <PaintBrush className="w-3.5 h-3.5" /> },
-                    { id: "video", label: "Video Gen", icon: <FilmStrip className="w-3.5 h-3.5" /> },
-                    { id: "3d", label: "3D Studio", icon: <Cube className="w-3.5 h-3.5" /> }
-                  ].map((mode) => (
+                    { id: "primary", label: "Primary", icon: "🧠" },
+                    { id: "reviewer", label: "Reviewer", icon: "🔍" },
+                    { id: "tester", label: "Tester", icon: "🧪" },
+                    { id: "bughunter", label: "Bug Hunter", icon: "🐛" },
+                    { id: "writer", label: "Docs", icon: "📝" },
+                    { id: "architect", label: "Architect", icon: "📐" }
+                  ].map((role) => (
                     <button
-                      key={mode.id}
-                      onClick={() => setChatMode(mode.id)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all ${
-                        chatMode === mode.id
+                      key={role.id}
+                      onClick={() => setActiveAgentRole(role.id)}
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                        activeAgentRole === role.id
                           ? "bg-[#2F6BFF] text-white shadow-2xs"
                           : "text-stone-600 hover:bg-stone-200/60"
                       }`}
                     >
-                      {mode.icon}
-                      <span>{mode.label}</span>
+                      <span>{role.icon}</span>
+                      <span>{role.label}</span>
                     </button>
                   ))}
                 </div>
 
-                {/* Filtered Capability Hub Dropdown */}
-                <div className="flex items-center gap-1.5 max-w-[180px] sm:max-w-[220px]">
-                  <span className="text-[10px] text-stone-400 font-medium shrink-0 hidden sm:inline">Model:</span>
+                {/* Filtered Model Selector Dropdown */}
+                <div className="flex items-center gap-1.5 max-w-[190px] sm:max-w-[230px] shrink-0">
+                  <span className="text-[10px] text-stone-400 font-bold shrink-0 hidden sm:inline">Model:</span>
                   <select
                     value={selectedChatModelId}
                     onChange={(e) => {
                       const val = e.target.value;
                       setSelectedChatModelId(val);
-                      const modelObj = availableChatModels.find((m) => m.id === val);
+                      const modelObj = userSelectedModels.find((m) => m.id === val);
                       if (modelObj && selectModel) {
                         selectModel(modelObj);
                       }
                     }}
-                    className="w-full bg-white border border-stone-200 rounded-lg px-2 py-1 text-[11px] font-semibold text-stone-800 outline-none focus:border-[#2F6BFF] truncate shadow-2xs"
+                    className="w-full bg-white border border-stone-200 rounded-xl px-2 py-1 text-[11px] font-bold text-stone-800 outline-none focus:border-[#2F6BFF] truncate shadow-2xs cursor-pointer"
                   >
-                    {availableChatModels.map((m) => (
+                    {userSelectedModels.map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.name || m.id} ({m.providerName || "AI Provider"})
                       </option>
@@ -872,36 +862,22 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Row 2: Embedded Studio View (Conditional on chatMode) */}
-              {chatMode === "image" && (
-                <div className="max-h-96 overflow-y-auto p-3 bg-stone-100/60 border-b border-stone-200">
-                  <ImageGenStudio onExportImage={(img) => applyCodeToWorkspace(`// Exported Image Asset: ${img.prompt}\n// URL: ${img.url}\n`)} />
-                </div>
-              )}
-
-              {chatMode === "video" && (
-                <div className="max-h-96 overflow-y-auto p-3 bg-stone-100/60 border-b border-stone-200">
-                  <VideoGenStudio onExportVideo={(vid) => applyCodeToWorkspace(`// Exported Motion Video Asset: ${vid.title}\n`)} />
-                </div>
-              )}
-
-              {chatMode === "3d" && (
-                <div className="max-h-96 overflow-y-auto p-3 bg-stone-100/60 border-b border-stone-200">
-                  <ThreeDStudioModal
-                    isEmbedded={true}
-                    onExportToWorkspace={(asset) => applyCodeToWorkspace(`// Exported WebGL 3D Asset: ${asset.name}\n// Preset: ${asset.preset}\n`)}
-                  />
-                </div>
-              )}
-
-              {/* Row 3: Input Bar */}
+              {/* Row 2: Input Bar with Active Agent Placeholder */}
               <div className="p-3 bg-white flex items-center gap-2">
                 <input
                   type="text"
                   placeholder={
-                    chatMode === "chat"
-                      ? "Ask Primary Agent or Co-Workers to build, test, review..."
-                      : `Enter ${chatMode.toUpperCase()} prompt or instructions for assigned capability model...`
+                    activeAgentRole === "primary"
+                      ? "Ask Primary AI Orchestrator to build, code, refactor..."
+                      : activeAgentRole === "reviewer"
+                      ? "Ask Code Reviewer Worker to audit security, patterns, performance..."
+                      : activeAgentRole === "tester"
+                      ? "Ask Test Engineer Worker to generate unit tests and assertions..."
+                      : activeAgentRole === "bughunter"
+                      ? "Ask Bug Hunter Worker to diagnose stack traces and error logs..."
+                      : activeAgentRole === "writer"
+                      ? "Ask Documentation Worker to write specs and README..."
+                      : "Ask System Architect Worker for high-level structure and patterns..."
                   }
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
@@ -909,7 +885,11 @@ export default function App() {
                   disabled={isAiLoading}
                   className="flex-1 bg-stone-100/80 border border-stone-200 rounded-xl px-3 py-2 text-xs outline-none text-stone-800 focus:border-[#2F6BFF]"
                 />
-                <button onClick={handleAiSend} disabled={isAiLoading} className="p-2 bg-[#2F6BFF] text-white rounded-xl hover:bg-blue-700 transition-colors shadow-2xs">
+                <button
+                  onClick={handleAiSend}
+                  disabled={isAiLoading}
+                  className="p-2 bg-[#2F6BFF] text-white rounded-xl hover:bg-blue-700 transition-colors shadow-2xs cursor-pointer"
+                >
                   <PaperPlane className="w-4 h-4" />
                 </button>
               </div>

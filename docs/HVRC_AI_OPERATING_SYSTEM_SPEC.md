@@ -47,29 +47,18 @@ The system preserves 100% of HVRC.AI's core architectural tenets:
 ## 3. Core Capability Specifications
 
 ### 3.1 Multimodal AI Capability Hub (`CapabilityContext.jsx`)
-Allows assigning specialized models per project across 14 capability slots:
+Allows assigning specialized models per project across 9 AI OS capability slots:
 1. `reasoningModel` (DeepSeek R1, OpenAI o1/o3)
 2. `codingModel` (Llama 3.3 70B, Claude 3.5 Sonnet)
 3. `reviewingModel` (Nemotron 70B)
-4. `planningModel`
-5. `researchModel`
-6. `debuggingModel`
-7. `documentationModel`
-8. `testingModel`
-9. `backgroundModel`
-10. `imageGenModel` (HVRC Flux Engine)
-11. `videoGenModel` (HVRC Motion Engine)
-12. `threeDGenModel` (HVRC WebGL 3D Studio)
-13. `speechModel`
-14. `visionModel`
+4. `planningModel` (Mistral Large, Architecture)
+5. `researchModel` (GPT-4o, Web Fact Analysis)
+6. `debuggingModel` (Qwen 2.5 Coder, Stack Trace Diagnostics)
+7. `documentationModel` (Technical Specs & Markdown)
+8. `testingModel` (Unit Test Generation & Assertion)
+9. `backgroundModel` (Autonomous Background Engine Supervisor)
 
-### 3.2 Native WebGL 3D Studio (`ThreeDStudioModal.jsx`)
-- Interactive orbit camera controls, rotation speed, lighting intensity sliders.
-- Wireframe mesh mode toggle.
-- Mesh inspection (Vertices, Faces, WebGL shading).
-- 1-click export directly to workspace `assets/models/` and Artifact Panel.
-
-### 3.3 Multi-Agent Intelligence Engine (`AgentOrchestrator.js`)
+### 3.2 Multi-Agent Intelligence Engine (`AgentOrchestrator.js`)
 - Primary Agent orchestrates project strategy.
 - Parallel worker roles (Code Reviewer, Test Engineer, Documentation Writer, Bug Hunter, System Architect).
 

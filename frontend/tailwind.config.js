@@ -16,6 +16,11 @@ export default {
   },
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans"', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        display: ['Outfit', '"Plus Jakarta Sans"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'Consolas', 'Monaco', 'monospace']
+      },
       rotate: {
         "270": "270deg",
         "360": "360deg"
@@ -175,25 +180,6 @@ export default {
         "workspace-item-selected-gradient":
           "linear-gradient(90deg, #5B616A 0%, #3F434B 100%)",
         "switch-selected": "linear-gradient(146deg, #5B616A 0%, #3F434B 100%)"
-      },
-      fontFamily: {
-        sans: [
-          "plus-jakarta-sans",
-          "ui-sans-serif",
-          "system-ui",
-          "-apple-system",
-          "BlinkMacSystemFont",
-          '"Segoe UI"',
-          "Roboto",
-          '"Helvetica Neue"',
-          "Arial",
-          '"Noto Sans"',
-          "sans-serif",
-          '"Apple Color Emoji"',
-          '"Segoe UI Emoji"',
-          '"Segoe UI Symbol"',
-          '"Noto Color Emoji"'
-        ]
       },
       animation: {
         sweep: "sweep 0.5s ease-in-out",

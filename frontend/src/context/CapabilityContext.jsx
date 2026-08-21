@@ -4,18 +4,13 @@ import { useProviders } from "@/context/ProviderContext";
 export const CAPABILITY_SLOTS = [
   { id: "reasoningModel", name: "Reasoning & Deep Thinking", icon: "🧠", defaultKeyword: "r1" },
   { id: "codingModel", name: "Code Generation & Refactoring", icon: "⚡", defaultKeyword: "llama-3.3" },
-  { id: "reviewingModel", name: "Code Review & QA", icon: "🔍", defaultKeyword: "nemotron" },
-  { id: "planningModel", name: "Architecture & Planning", icon: "📐", defaultKeyword: "claude" },
-  { id: "researchModel", name: "Research & Web Analysis", icon: "🌐", defaultKeyword: "gpt-4o" },
-  { id: "debuggingModel", name: "Debugging & Diagnostics", icon: "🐛", defaultKeyword: "coder" },
+  { id: "reviewingModel", name: "Code Review & Security Audit", icon: "🔍", defaultKeyword: "nemotron" },
+  { id: "planningModel", name: "System Architecture & Planning", icon: "📐", defaultKeyword: "claude" },
+  { id: "researchModel", name: "Research & Fact Analysis", icon: "🌐", defaultKeyword: "gpt-4o" },
+  { id: "debuggingModel", name: "Debugging & Stack Diagnostics", icon: "🐛", defaultKeyword: "coder" },
   { id: "documentationModel", name: "Docs & Technical Writing", icon: "📝", defaultKeyword: "mistral" },
   { id: "testingModel", name: "Test Generation & Assertion", icon: "🧪", defaultKeyword: "deepseek" },
-  { id: "backgroundModel", name: "Autonomous Background Supervision", icon: "🤖", defaultKeyword: "llama-3.3" },
-  { id: "imageGenModel", name: "Native Image Generation", icon: "🎨", defaultKeyword: "flux" },
-  { id: "videoGenModel", name: "Video Synthesis Engine", icon: "🎬", defaultKeyword: "video" },
-  { id: "threeDGenModel", name: "3D Asset WebGL Generator", icon: "📦", defaultKeyword: "shap-e" },
-  { id: "speechModel", name: "Speech & Audio Engine", icon: "🎙️", defaultKeyword: "whisper" },
-  { id: "visionModel", name: "Vision & Visual Analysis", icon: "👁️", defaultKeyword: "vision" }
+  { id: "backgroundModel", name: "Autonomous Background Supervision", icon: "🤖", defaultKeyword: "llama-3.3" }
 ];
 
 const CapabilityContext = createContext(null);
@@ -38,12 +33,7 @@ export function CapabilityProvider({ children }) {
       debuggingModel: null,
       documentationModel: null,
       testingModel: null,
-      backgroundModel: null,
-      imageGenModel: { id: "hvrc-image-flux", name: "HVRC Flux Image Engine", providerName: "Native Multimodal" },
-      videoGenModel: { id: "hvrc-video-engine", name: "HVRC Motion Video Engine", providerName: "Native Multimodal" },
-      threeDGenModel: { id: "hvrc-3d-webgl", name: "HVRC WebGL 3D Studio", providerName: "Native Multimodal" },
-      speechModel: { id: "hvrc-[#2F6BFF]-speech", name: "HVRC Audio Studio", providerName: "Native Multimodal" },
-      visionModel: null
+      backgroundModel: null
     };
   });
 

@@ -1,80 +1,79 @@
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import {
+  Sparkle,
+  Code,
+  Cpu,
+  ShieldCheck,
+  Lightning,
+  ArrowsClockwise,
+  UsersThree,
+  Key,
+  FolderSimple,
+  Globe,
+  Terminal,
+  Play,
+  ArrowRight,
+  CheckCircle
+} from "@phosphor-icons/react";
 
 const FEATURES = [
   {
-    icon: "⚡",
-    title: "Blazing Fast AI Chat",
-    desc: "Chat with GPT-4o, Claude 3.5, Gemini 2.5, Llama 3.3 and 200+ models. Switch providers instantly without leaving the page.",
+    icon: <Cpu className="w-6 h-6 text-[#2F6BFF]" />,
+    title: "Universal Model Gateway (460+)",
+    desc: "Connect NVIDIA NIM, OpenRouter, Groq, or Local Ollama. Auto-discover all your models with zero vendor lock-in.",
+    badge: "BYOK Gateway"
   },
   {
-    icon: "💻",
-    title: "AI-Powered Code IDE",
-    desc: "Full Monaco editor with live web preview, AI pair programming, file system, and instant deploy. Think Cursor meets Bolt.new.",
+    icon: <UsersThree className="w-6 h-6 text-emerald-400" />,
+    title: "Multi-Agent Swarm Runtimes",
+    desc: "Collaborative agent swarms: Primary Orchestrator, Code Reviewer, Test Engineer, Bug Hunter, and System Architect.",
+    badge: "Autonomous Swarm"
   },
   {
-    icon: "🗂️",
-    title: "Project Workspaces",
-    desc: "Organise your AI work into projects. Each project has its own chat history, files, knowledge base and code workspace.",
+    icon: <Code className="w-6 h-6 text-cyan-400" />,
+    title: "Full-Stack Code IDE & Sandbox",
+    desc: "Tabbed editor with JetBrains Mono, live hot-reloading web preview, diagnostics panel, and 1-click AI auto-fix.",
+    badge: "Zero-Setup IDE"
   },
   {
-    icon: "🔑",
-    title: "Bring Your Own Key",
-    desc: "Paste your OpenRouter, Groq or NVIDIA NIM API key. We auto-fetch all your available models — no subscriptions or lock-in.",
+    icon: <ShieldCheck className="w-6 h-6 text-purple-400" />,
+    title: "Zero-Server Privacy & Google Drive",
+    desc: "Projects, chats, and code are saved directly to your Google Drive or local browser storage. We store zero user data.",
+    badge: "100% Client-First"
   },
   {
-    icon: "🔒",
-    title: "Zero Server Storage",
-    desc: "Your projects, chats and code are saved directly in your Google Drive. HVRC.AI stores only your login — nothing else.",
+    icon: <Lightning className="w-6 h-6 text-amber-400" />,
+    title: "Serverless High-Speed Proxy",
+    desc: "Built-in stateless CORS proxy with rate-limiting, instant token streaming, and token latency monitoring.",
+    badge: "Sub-50ms Latency"
   },
   {
-    icon: "🌐",
-    title: "Built-in CORS Proxy",
-    desc: "Call any AI API endpoint from the browser. Our serverless proxy eliminates CORS restrictions without backend setup.",
-  },
-  {
-    icon: "📚",
-    title: "Knowledge Base (RAG)",
-    desc: "Upload documents, PDFs and websites. Your AI models search them automatically to give grounded, factual answers.",
-  },
-  {
-    icon: "🤖",
-    title: "Agent Skills & MCP",
-    desc: "Enable web browsing, code execution, API calls and custom tools. Build autonomous AI agents that act, not just chat.",
-  },
-  {
-    icon: "🎙️",
-    title: "Voice Chat (STT/TTS)",
-    desc: "Speak to your AI with speech-to-text and listen back with natural text-to-speech — entirely in the browser.",
-  },
+    icon: <Globe className="w-6 h-6 text-rose-400" />,
+    title: "Knowledge Grounding & RAG",
+    desc: "Upload technical documentation, PDFs, and codebase repositories. Models retrieve factual context automatically.",
+    badge: "Vector RAG"
+  }
 ];
 
 const MODELS = [
-  { name: "GPT-4o", tag: "OpenAI", color: "#10a37f" },
+  { name: "DeepSeek R1", tag: "Free NIM", color: "#ef4444" },
+  { name: "Llama 3.3 70B", tag: "Free NIM", color: "#7c3aed" },
   { name: "Claude 3.5 Sonnet", tag: "Anthropic", color: "#d4a27f" },
-  { name: "Gemini 2.5 Flash Free", tag: "Free", color: "#4285f4" },
-  { name: "Llama 3.3 70B Free", tag: "Free", color: "#7c3aed" },
-  { name: "DeepSeek R1 Free", tag: "Free", color: "#ef4444" },
-  { name: "Mistral Large", tag: "Mistral", color: "#f97316" },
-  { name: "Qwen 2.5 72B Free", tag: "Free", color: "#06b6d4" },
+  { name: "GPT-4o", tag: "OpenAI", color: "#10a37f" },
+  { name: "Qwen 2.5 72B", tag: "Free NIM", color: "#06b6d4" },
   { name: "Nemotron 70B", tag: "NVIDIA", color: "#76b900" },
-  { name: "Mixtral 8x22B", tag: "Free", color: "#8b5cf6" },
-  { name: "Command R+", tag: "Cohere", color: "#0891b2" },
-];
-
-const STEPS = [
-  { n: "01", title: "Sign in with Google", desc: "Create your account in one click with Google OAuth. No passwords, no forms." },
-  { n: "02", title: "Add your API key", desc: "Paste your free OpenRouter, Groq or NVIDIA NIM key. All models load automatically." },
-  { n: "03", title: "Start building", desc: "Chat, code, organise projects and deploy — everything from one unified AI workspace." },
+  { name: "Mistral Large", tag: "Mistral", color: "#f97316" },
+  { name: "Gemini 2.5 Flash", tag: "Google", color: "#4285f4" },
+  { name: "Mixtral 8x22B", tag: "Free Open", color: "#8b5cf6" }
 ];
 
 const COMPARISONS = [
-  { name: "ChatGPT", what: "AI Chat" },
-  { name: "Cursor", what: "AI Code IDE" },
-  { name: "Bolt.new", what: "Live Code Preview" },
-  { name: "Replit", what: "Code Workspace" },
-  { name: "Notion AI", what: "Knowledge Base" },
-  { name: "ElevenLabs", what: "Voice Chat" },
+  { name: "ChatGPT", what: "AI Chat Assistant" },
+  { name: "Cursor", what: "AI Code Editor" },
+  { name: "Bolt.new", what: "Live Preview Sandbox" },
+  { name: "Replit", what: "Cloud Workspaces" },
+  { name: "Notion AI", what: "Knowledge Base" }
 ];
 
 export default function LandingPage() {
@@ -82,195 +81,312 @@ export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 48);
+    const fn = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", fn);
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-[#06070f] text-white overflow-x-hidden" style={{ fontFamily: "'Plus Jakarta Sans', Inter, sans-serif" }}>
+    <div className="relative min-h-screen bg-[#06070f] text-white overflow-x-hidden font-sans selection:bg-[#2F6BFF]/30 selection:text-white">
+      
+      {/* ══ AMBIENT BACKGROUND GLOWS ══ */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-b from-[#2F6BFF]/20 via-[#06B6D4]/10 to-transparent blur-[140px] rounded-full" />
+        <div className="absolute top-[800px] -left-60 w-[600px] h-[600px] bg-[#7C3AED]/10 blur-[150px] rounded-full" />
+        <div className="absolute top-[1600px] -right-60 w-[600px] h-[600px] bg-[#10B981]/10 blur-[150px] rounded-full" />
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.4) 1px, transparent 1px)",
+            backgroundSize: "48px 48px"
+          }}
+        />
+      </div>
 
-      {/* ══ NAVBAR ══ */}
-      <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? "bg-[#06070f]/95 backdrop-blur-xl border-b border-white/[0.06]" : ""}`}>
+      {/* ══ FIXED GLASS NAVBAR ══ */}
+      <nav
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+          scrolled ? "bg-[#06070f]/90 backdrop-blur-xl border-b border-white/[0.08] shadow-2xl" : "bg-transparent"
+        }`}
+      >
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <span className="text-xl font-black tracking-tight">
-            HVRC<span className="text-[#2F6BFF]">.AI</span>
-          </span>
-          <div className="hidden md:flex items-center gap-8 text-sm text-white/50">
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#models" className="hover:text-white transition-colors">Models</a>
-            <a href="#how" className="hover:text-white transition-colors">How it works</a>
-          </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/login")} className="text-sm px-4 py-2 rounded-lg border border-white/[0.12] text-white/70 hover:text-white hover:border-white/30 transition-all">
+            <span className="font-display text-2xl font-black tracking-tight flex items-center gap-1.5">
+              <span>HVRC</span>
+              <span className="text-[#2F6BFF]">.AI</span>
+            </span>
+            <span className="hidden sm:inline-block text-[10px] font-mono font-bold bg-[#2F6BFF]/15 text-[#60A5FA] px-2.5 py-0.5 rounded-full border border-[#2F6BFF]/30">
+              AI OS v3.0
+            </span>
+          </div>
+
+          <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-stone-400">
+            <a href="#features" className="hover:text-white transition-colors">Platform Features</a>
+            <a href="#swarm" className="hover:text-white transition-colors">Multi-Agent Swarm</a>
+            <a href="#models" className="hover:text-white transition-colors">460+ Models</a>
+            <a href="#security" className="hover:text-white transition-colors">Zero-Server Security</a>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/login")}
+              className="text-xs sm:text-sm px-4 py-2 rounded-xl border border-white/[0.12] text-stone-300 hover:text-white hover:border-white/30 transition-all cursor-pointer font-bold"
+            >
               Sign In
             </button>
-            <button onClick={() => navigate("/login")} className="text-sm px-5 py-2 rounded-lg font-bold bg-[#2F6BFF] hover:bg-[#1d5aef] transition-all shadow-lg shadow-blue-900/30">
-              Start Free →
+            <button
+              onClick={() => navigate("/login")}
+              className="text-xs sm:text-sm px-5 py-2 rounded-xl font-extrabold bg-[#2F6BFF] hover:bg-blue-600 transition-all shadow-lg shadow-[#2F6BFF]/30 hover:scale-[1.02] cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Launch Studio</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
       </nav>
 
-      {/* ══ HERO ══ */}
-      <section className="relative flex flex-col items-center justify-center min-h-screen px-6 pt-28 pb-20 text-center overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{
-          background: "radial-gradient(ellipse 100% 70% at 50% -5%, rgba(47,107,255,0.22) 0%, transparent 65%)",
-        }} />
-        {/* Grid lines */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.03]"
-          style={{ backgroundImage: "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
-
-        {/* Badge */}
-        <div className="relative z-10 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#2F6BFF]/35 bg-[#2F6BFF]/10 text-xs font-semibold text-[#7eb3ff] mb-8">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#2F6BFF] animate-pulse inline-block" />
-          Next-Gen AI Operating System
+      {/* ══ HERO SECTION ══ */}
+      <section className="relative z-10 pt-36 pb-24 px-6 max-w-7xl mx-auto flex flex-col items-center text-center">
+        {/* Top Status Pill */}
+        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-[#2F6BFF]/40 bg-[#2F6BFF]/10 text-xs font-bold text-[#93C5FD] mb-8 shadow-sm backdrop-blur-md">
+          <Sparkle className="w-4 h-4 text-[#60A5FA] animate-pulse" />
+          <span>The Next-Generation AI Operating System for Developers</span>
         </div>
 
-        {/* Headline */}
-        <h1 className="relative z-10 font-black leading-[1.02] tracking-tighter text-white max-w-5xl" style={{ fontSize: "clamp(3.2rem, 7vw, 6.5rem)" }}>
-          One platform.<br />
-          <span style={{
-            backgroundImage: "linear-gradient(135deg, #2F6BFF 0%, #7EB3FF 40%, #a5c8ff 60%, #2F6BFF 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-          }}>
-            Every AI model.
-          </span>
+        {/* Hero Title */}
+        <h1 className="font-display font-black text-5xl sm:text-7xl lg:text-8xl tracking-tight leading-[1.05] max-w-5xl">
+          One Workspace.<br />
+          <span className="text-gradient-blue">Every AI Model.</span>
         </h1>
 
-        <p className="relative z-10 mt-6 max-w-2xl text-white/50 text-lg leading-relaxed">
-          HVRC.AI combines <strong className="text-white/80">ChatGPT</strong>, <strong className="text-white/80">Cursor</strong>, <strong className="text-white/80">Bolt.new</strong>, <strong className="text-white/80">Replit</strong> and <strong className="text-white/80">Notion AI</strong> into one workspace — with 200+ free & paid AI models, a live code IDE, knowledge base, voice chat, and zero server-side data storage.
+        {/* Subtitle */}
+        <p className="mt-6 max-w-3xl text-stone-400 text-base sm:text-lg leading-relaxed font-medium">
+          HVRC.AI unifies <strong className="text-white">AI Pair Programming</strong>, <strong className="text-white">Multi-Agent Swarm Orchestration</strong>, <strong className="text-white">Universal Model BYOK Gateway</strong>, and <strong className="text-white">Live Code Sandbox</strong> into a zero-server browser environment.
         </p>
 
-        <div className="relative z-10 flex flex-col sm:flex-row gap-4 mt-10">
-          <button onClick={() => navigate("/login")}
-            className="px-9 py-4 rounded-xl font-bold text-base bg-[#2F6BFF] hover:bg-[#1d5aef] transition-all duration-200 shadow-2xl shadow-blue-900/50 hover:scale-[1.02]">
-            Get Started Free →
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 mt-10 w-full sm:w-auto">
+          <button
+            onClick={() => navigate("/login")}
+            className="px-9 py-4 rounded-2xl font-extrabold text-base bg-[#2F6BFF] hover:bg-blue-600 transition-all shadow-2xl shadow-[#2F6BFF]/40 hover:scale-[1.03] cursor-pointer flex items-center justify-center gap-2"
+          >
+            <span>Start Building for Free</span>
+            <ArrowRight className="w-4 h-4" />
           </button>
-          <a href="#features"
-            className="px-9 py-4 rounded-xl font-semibold text-base border border-white/[0.12] text-white/60 hover:text-white hover:border-white/25 transition-all duration-200 text-center">
-            Explore Features
-          </a>
+
+          <button
+            onClick={() => navigate("/project/default/workspace")}
+            className="px-8 py-4 rounded-2xl font-bold text-base border border-white/[0.15] bg-white/[0.04] text-stone-200 hover:text-white hover:bg-white/[0.08] hover:border-white/30 transition-all cursor-pointer flex items-center justify-center gap-2 backdrop-blur-md"
+          >
+            <Play className="w-4 h-4 text-[#60A5FA]" />
+            <span>Live Workspace Demo</span>
+          </button>
         </div>
 
-        <p className="relative z-10 mt-7 text-xs text-white/25">
-          Free to start &nbsp;·&nbsp; No credit card &nbsp;·&nbsp; Your data stays in your Google Drive
+        <p className="mt-6 text-xs text-stone-500 font-medium">
+          Free Public NVIDIA Endpoints &nbsp;•&nbsp; No Credit Card Required &nbsp;•&nbsp; Zero Server Storage
         </p>
 
-        {/* Replaces comparison chips */}
-        <div className="relative z-10 mt-14 flex flex-wrap justify-center gap-2 max-w-2xl">
-          <span className="text-xs text-white/30 w-full text-center mb-1">Replaces</span>
+        {/* ══ HERO SHOWCASE BANNER IMAGE ══ */}
+        <div className="mt-16 w-full max-w-6xl relative group">
+          <div className="absolute -inset-1.5 bg-gradient-to-r from-[#2F6BFF] via-[#06B6D4] to-[#8B5CF6] rounded-3xl blur-xl opacity-35 group-hover:opacity-60 transition duration-1000"></div>
+          <div className="relative rounded-2xl overflow-hidden border border-white/20 shadow-2xl bg-[#0D0F18]">
+            <img
+              src="/images/hero_os_banner.jpg"
+              alt="HVRC.AI OS Command Center"
+              className="w-full h-auto object-cover transform transition duration-700 hover:scale-[1.01]"
+            />
+            {/* Overlay Glass Status Bar */}
+            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[#06070F] via-[#06070F]/80 to-transparent p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
+                <div>
+                  <div className="text-sm font-extrabold text-white">HVRC.AI Live OS Kernel v3.0</div>
+                  <div className="text-xs text-stone-400 font-mono">Multi-Agent Runtimes • Universal Model Gateway Active</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-mono bg-white/10 px-3 py-1 rounded-lg border border-white/10 text-stone-300">
+                  460+ Live Endpoints
+                </span>
+                <button
+                  onClick={() => navigate("/login")}
+                  className="px-4 py-1.5 bg-[#2F6BFF] hover:bg-blue-600 text-white rounded-lg text-xs font-bold transition-all shadow-sm"
+                >
+                  Open Studio →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Replaces Chips */}
+        <div className="mt-16 flex flex-wrap justify-center items-center gap-2 max-w-3xl">
+          <span className="text-xs text-stone-400 font-bold uppercase tracking-wider mr-2">Replaces Fragmented Tools:</span>
           {COMPARISONS.map((c) => (
-            <span key={c.name} className="px-3 py-1.5 rounded-full border border-white/[0.1] bg-white/[0.03] text-xs text-white/50">
-              <span className="line-through text-white/30">{c.name}</span>
-              <span className="ml-1.5 text-white/50">{c.what}</span>
+            <span
+              key={c.name}
+              className="px-3.5 py-1.5 rounded-full border border-white/[0.1] bg-white/[0.03] text-xs font-medium text-stone-300 backdrop-blur-md"
+            >
+              <span className="line-through text-stone-500 mr-1.5">{c.name}</span>
+              <span className="text-[#60A5FA] font-bold">{c.what}</span>
             </span>
           ))}
         </div>
       </section>
 
-      {/* ══ MODEL TICKER ══ */}
-      <section id="models" className="py-10 border-y border-white/[0.06] overflow-hidden">
-        <p className="text-center text-[11px] text-white/25 uppercase tracking-[0.2em] mb-5">200+ models available via OpenRouter · Groq · NVIDIA NIM</p>
-        <div style={{ display: "flex", animation: "marquee 30s linear infinite", whiteSpace: "nowrap" }}>
+      {/* ══ LIVE MODEL TICKER ══ */}
+      <section id="models" className="py-8 border-y border-white/[0.08] bg-white/[0.02] overflow-hidden relative">
+        <p className="text-center text-xs font-extrabold text-stone-400 uppercase tracking-[0.25em] mb-4">
+          Connect 460+ Live Models across NVIDIA NIM • OpenRouter • Groq • Local Ollama
+        </p>
+        <div className="flex animate-[marquee_35s_linear_infinite] whitespace-nowrap gap-4">
           {[...MODELS, ...MODELS, ...MODELS].map((m, i) => (
-            <div key={i} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 16px", margin: "0 6px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", flexShrink: 0 }}>
-              <span style={{ width: 8, height: 8, borderRadius: "50%", background: m.color, display: "inline-block" }} />
-              <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)" }}>{m.name}</span>
-              <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6, background: m.color + "22", color: m.color }}>{m.tag}</span>
+            <div
+              key={i}
+              className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl border border-white/[0.08] bg-[#0D0F18]/80 text-xs font-bold text-stone-200 shrink-0 shadow-sm"
+            >
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: m.color }} />
+              <span className="font-extrabold">{m.name}</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/10 text-stone-300 border border-white/5">
+                {m.tag}
+              </span>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ══ FEATURES ══ */}
-      <section id="features" className="max-w-7xl mx-auto px-6 py-28">
-        <div className="text-center mb-16">
-          <h2 className="font-black text-4xl md:text-5xl tracking-tight mb-4">
-            Built for AI-first builders
+      {/* ══ MULTI-AGENT SWARM ARCHITECTURE SECTION ══ */}
+      <section id="swarm" className="max-w-7xl mx-auto px-6 py-28 relative">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div className="lg:col-span-6 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-extrabold border border-emerald-500/20">
+              <UsersThree className="w-4 h-4" />
+              <span>Multi-Agent Swarm Intelligence</span>
+            </div>
+
+            <h2 className="font-display font-black text-4xl sm:text-5xl tracking-tight leading-tight">
+              A Symphony of AI Agents<br />
+              <span className="text-gradient-emerald">Working Together in Parallel.</span>
+            </h2>
+
+            <p className="text-stone-400 text-base leading-relaxed">
+              Don't settle for a single chat box. In HVRC.AI, your Primary Orchestrator agent delegates parallel tasks to dedicated specialized Co-Workers:
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+              {[
+                { title: "🧠 Primary Orchestrator", desc: "Main project manager and strategist" },
+                { title: "🔍 Code Reviewer Worker", desc: "Performs security, pattern & QA audits" },
+                { title: "🧪 Test Engineer Worker", desc: "Writes complete unit tests & assertions" },
+                { title: "🐛 Bug Hunter Worker", desc: "Diagnoses stack traces & fixes bugs" },
+                { title: "📝 Documentation Writer", desc: "Generates specs, markdown & READMEs" },
+                { title: "📐 System Architect", desc: "Enforces clean design patterns" }
+              ].map((agent, i) => (
+                <div key={i} className="p-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.03] space-y-1">
+                  <div className="font-extrabold text-xs text-white">{agent.title}</div>
+                  <div className="text-[11px] text-stone-400">{agent.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="lg:col-span-6 relative">
+            <div className="relative rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-[#0D0F18] group">
+              <img
+                src="/images/multi_agent_swarm.jpg"
+                alt="Multi-Agent Swarm Architecture"
+                className="w-full h-auto object-cover transform transition duration-500 group-hover:scale-105"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ PLATFORM FEATURES GRID ══ */}
+      <section id="features" className="max-w-7xl mx-auto px-6 py-24 border-t border-white/[0.08]">
+        <div className="text-center mb-16 space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-extrabold border border-blue-500/20">
+            <Sparkle className="w-3.5 h-3.5" />
+            <span>Built for AI-Native Engineering</span>
+          </div>
+          <h2 className="font-display font-black text-4xl md:text-5xl tracking-tight">
+            Full-Stack AI Operating System
           </h2>
-          <p className="text-white/45 max-w-xl mx-auto text-lg">
-            Everything you need to ideate, code, chat and ship — in one AI-native workspace.
+          <p className="text-stone-400 max-w-xl mx-auto text-base">
+            Everything you need to ideate, code, test, and synchronize project workflows.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {FEATURES.map((f, i) => (
-            <div key={i} className="group relative p-7 rounded-2xl border border-white/[0.07] bg-white/[0.025] hover:bg-white/[0.05] hover:border-[#2F6BFF]/40 transition-all duration-300 cursor-default">
-              <div className="text-3xl mb-4">{f.icon}</div>
-              <h3 className="font-bold text-white text-lg mb-2">{f.title}</h3>
-              <p className="text-white/45 text-sm leading-relaxed">{f.desc}</p>
-              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                style={{ background: "radial-gradient(circle at 30% 30%, rgba(47,107,255,0.06) 0%, transparent 70%)" }} />
+            <div
+              key={i}
+              className="p-8 rounded-3xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] hover:border-[#2F6BFF]/40 transition-all duration-300 space-y-4 group"
+            >
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-inner">
+                  {f.icon}
+                </div>
+                <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-white/5 text-stone-300 border border-white/5">
+                  {f.badge}
+                </span>
+              </div>
+              <h3 className="font-extrabold text-white text-lg">{f.title}</h3>
+              <p className="text-stone-400 text-sm leading-relaxed">{f.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ══ HOW IT WORKS ══ */}
-      <section id="how" className="max-w-5xl mx-auto px-6 py-20">
-        <h2 className="text-center font-black text-4xl md:text-5xl tracking-tight mb-16">
-          Up and running in <span className="text-[#2F6BFF]">3 minutes</span>
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {STEPS.map((s) => (
-            <div key={s.n} className="relative p-8 rounded-2xl border border-white/[0.07] bg-white/[0.025] text-center">
-              <div className="text-6xl font-black text-[#2F6BFF]/20 mb-4">{s.n}</div>
-              <h3 className="font-bold text-lg mb-2">{s.title}</h3>
-              <p className="text-white/45 text-sm leading-relaxed">{s.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ══ PRIVACY CALLOUT ══ */}
-      <section className="max-w-4xl mx-auto px-6 py-10">
-        <div className="p-8 rounded-2xl border border-white/[0.07] bg-white/[0.02] flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-          <div className="text-5xl shrink-0">🔒</div>
-          <div>
-            <h3 className="font-black text-xl mb-2">Your data never touches our servers</h3>
-            <p className="text-white/45 text-sm leading-relaxed">
-              HVRC.AI only stores your login credentials in Supabase Auth. All projects, chat histories, code files and knowledge base documents are saved exclusively inside <strong className="text-white/70">your own Google Drive</strong> — encrypted, private and always under your control. We cannot read, sell or access your data.
+      {/* ══ ZERO SERVER PRIVACY CALLOUT ══ */}
+      <section id="security" className="max-w-5xl mx-auto px-6 py-16">
+        <div className="p-8 sm:p-12 rounded-3xl border border-emerald-500/30 bg-emerald-950/20 backdrop-blur-xl flex flex-col md:flex-row items-center gap-8">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-9 h-9" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-display font-extrabold text-2xl text-white">Your Data Never Touches Our Servers</h3>
+            <p className="text-stone-300 text-sm leading-relaxed">
+              HVRC.AI adheres to a strict <strong className="text-white">Zero-Server Storage architecture</strong>. Your workspace files, chat histories, code repositories, and API credentials are kept exclusively inside <strong className="text-emerald-400">your own Google Drive</strong> and encrypted browser localStorage. We never store, inspect, or sell your code.
             </p>
           </div>
         </div>
       </section>
 
       {/* ══ CTA BANNER ══ */}
-      <section className="max-w-5xl mx-auto px-6 py-20">
-        <div className="relative rounded-3xl p-14 text-center overflow-hidden"
-          style={{ background: "linear-gradient(135deg, rgba(47,107,255,0.18) 0%, rgba(90,158,255,0.08) 100%)", border: "1px solid rgba(47,107,255,0.25)" }}>
-          <div className="absolute inset-0 pointer-events-none"
-            style={{ background: "radial-gradient(ellipse 70% 80% at 50% 0%, rgba(47,107,255,0.18) 0%, transparent 70%)" }} />
-          <h2 className="relative font-black text-4xl md:text-5xl tracking-tight mb-4">
-            Start building with AI today
+      <section className="max-w-6xl mx-auto px-6 py-20">
+        <div className="relative rounded-3xl p-12 sm:p-16 text-center overflow-hidden border border-[#2F6BFF]/40 bg-gradient-to-b from-[#0B1536] to-[#06070F] shadow-2xl">
+          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_70%_80%_at_50%_0%,rgba(47,107,255,0.25),transparent_70%)]" />
+          <h2 className="relative font-display font-black text-4xl sm:text-5xl tracking-tight mb-4">
+            Start Building with the AI OS Today
           </h2>
-          <p className="relative text-white/50 mb-9 max-w-md mx-auto text-lg">
-            Free to start. No credit card. Bring your own API key.
+          <p className="relative text-stone-300 mb-8 max-w-lg mx-auto text-base">
+            Free public NIM endpoints included. Bring your own API keys for unlimited model access.
           </p>
-          <button onClick={() => navigate("/login")}
-            className="relative px-12 py-4 rounded-xl font-black text-lg bg-[#2F6BFF] hover:bg-[#1d5aef] transition-all duration-200 shadow-2xl shadow-blue-900/40 hover:scale-[1.03]">
-            Get Started Free →
+          <button
+            onClick={() => navigate("/login")}
+            className="relative px-10 py-4 rounded-2xl font-extrabold text-base bg-[#2F6BFF] hover:bg-blue-600 transition-all duration-200 shadow-2xl shadow-[#2F6BFF]/50 hover:scale-[1.03] cursor-pointer"
+          >
+            Launch Command Center →
           </button>
         </div>
       </section>
 
       {/* ══ FOOTER ══ */}
-      <footer className="border-t border-white/[0.06] py-10 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/25">
-          <span className="font-black text-sm text-white/50">HVRC<span className="text-[#2F6BFF]">.AI</span></span>
-          <span>Next-Gen AI Operating System &amp; Workspace</span>
-          <span>© {new Date().getFullYear()} HVRC Labs. All rights reserved.</span>
+      <footer className="border-t border-white/[0.08] py-12 px-6 bg-[#04050A]">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-stone-500 font-medium">
+          <div className="flex items-center gap-2">
+            <span className="font-display font-black text-sm text-stone-300">HVRC<span className="text-[#2F6BFF]">.AI</span></span>
+            <span>•</span>
+            <span>Next-Gen AI Operating System &amp; Development Workspace</span>
+          </div>
+          <div>
+            <span>© {new Date().getFullYear()} HVRC Labs. Zero-Server Architecture. All rights reserved.</span>
+          </div>
         </div>
       </footer>
-
-      <style>{`
-        @keyframes marquee {
-          from { transform: translateX(0); }
-          to { transform: translateX(-33.333%); }
-        }
-      `}</style>
     </div>
   );
 }

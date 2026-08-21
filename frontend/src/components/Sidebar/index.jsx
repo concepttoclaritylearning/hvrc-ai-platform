@@ -30,7 +30,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, activeProject }
       label: "Workspace",
       path: activeProject ? `/project/${activeProject.slug || activeProject.id}/workspace` : "/project/default/workspace",
       icon: CodeBlock,
-      badge: "Cursor/Bolt"
+      badge: "IDE / Live"
     },
     {
       label: "AI Chat",

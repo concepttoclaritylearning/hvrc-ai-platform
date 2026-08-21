@@ -1,18 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Lightning,
   FolderPlus,
   ChatCircleText,
   CodeBlock,
   UploadSimple,
   Sparkle,
   ArrowRight,
-  Clock,
-  PushPin,
-  FileCode,
-  CheckCircle,
-  FolderOpen
+  ShieldCheck,
+  Cpu,
+  UsersThree,
+  Globe,
+  Terminal,
+  FolderOpen,
+  ArrowUpRight,
+  HardDrive
 } from "@phosphor-icons/react";
 import useUser from "@/hooks/useUser";
 import { useModel } from "@/ModelContext";
@@ -23,7 +25,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
 
   // Dynamic user projects state stored in localStorage
-  const [userProjects, setUserProjects] = useState(() => {
+  const [userProjects] = useState(() => {
     const saved = localStorage.getItem("hvrc_user_projects");
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
@@ -34,123 +36,167 @@ export default function DashboardPage() {
         name: "Default Workspace Project",
         slug: "default",
         updated: "Active Now",
-        desc: "Interactive React workspace powered by HVRC.AI zero-server engine.",
+        desc: "Full-Stack AI Operating System workspace with Monaco editor, live web sandbox, and Multi-Agent Swarm.",
         status: "Active"
       }
     ];
   });
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-8 animate-fade-in font-sans">
-      {/* Welcome Banner */}
-      <div className="bg-white rounded-3xl p-8 border border-stone-200/80 shadow-sm relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in font-sans">
+      
+      {/* ══ HERO COMMAND CENTER BANNER ══ */}
+      <div className="relative rounded-3xl p-8 border border-stone-200/90 bg-gradient-to-r from-white via-stone-50/80 to-blue-50/40 shadow-sm overflow-hidden flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#2F6BFF]/10 to-transparent blur-3xl rounded-full pointer-events-none" />
+
         <div className="relative z-10 space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-[#2F6BFF] text-xs font-semibold">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2F6BFF]/10 text-[#2F6BFF] text-xs font-bold">
             <Sparkle weight="fill" className="w-3.5 h-3.5" />
-            <span>HVRC.AI Command Center</span>
+            <span>AI Operating System Command Center</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-stone-900 tracking-tight">
+
+          <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-stone-900 tracking-tight">
             Welcome back, {user?.username || user?.name || "Developer"} 👋
           </h1>
-          <p className="text-stone-600 text-xs max-w-xl">
-            Select a project to continue coding, ask questions in AI chat, or launch a live web sandbox.
+
+          <p className="text-stone-600 text-xs sm:text-sm max-w-2xl leading-relaxed">
+            Multi-Agent Swarm Orchestrator is active. Launch an integrated IDE workspace, converse in AI Chat, or configure capability models in the Model Hub.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 relative z-10 w-full md:w-auto">
+        <div className="flex items-center gap-3 relative z-10 w-full sm:w-auto shrink-0">
+          <button
+            onClick={() => navigate("/project/default/workspace")}
+            className="flex-1 sm:flex-none px-5 py-3 rounded-2xl bg-[#2F6BFF] text-white text-xs font-extrabold hover:bg-blue-700 shadow-lg shadow-[#2F6BFF]/25 flex items-center justify-center gap-2 transition-all cursor-pointer hover:scale-[1.02]"
+          >
+            <CodeBlock className="w-4 h-4" />
+            <span>Launch Code Workspace</span>
+          </button>
+          
           <button
             onClick={() => navigate("/projects")}
-            className="flex-1 md:flex-none px-4 py-2.5 rounded-2xl bg-[#2F6BFF] text-white text-xs font-semibold hover:bg-blue-700 shadow-md shadow-[#2F6BFF]/20 flex items-center justify-center gap-2 transition-all"
+            className="px-4 py-3 rounded-2xl bg-white border border-stone-200 text-stone-800 text-xs font-bold hover:bg-stone-50 shadow-2xs transition-all cursor-pointer flex items-center gap-1.5"
           >
-            <FolderPlus className="w-4 h-4" />
-            <span>+ Create Project</span>
+            <FolderPlus className="w-4 h-4 text-[#2F6BFF]" />
+            <span>+ New Project</span>
           </button>
         </div>
       </div>
 
-      {/* Quick Action Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link
-          to="/project/default/workspace"
-          className="p-5 bg-white rounded-3xl border border-stone-200/80 hover:border-[#2F6BFF] shadow-2xs hover:shadow-md transition-all group flex flex-col justify-between space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#2F6BFF] flex items-center justify-center font-bold">
-              <CodeBlock className="w-5 h-5" />
+      {/* ══ TELEMETRY METRIC PILLS ══ */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        {[
+          { label: "Active Model", val: activeModel?.name || "Llama 3.3 70B", sub: "Universal Gateway", icon: <Cpu className="w-4 h-4 text-[#2F6BFF]" /> },
+          { label: "Swarm Workers", val: "6 Active Roles", sub: "Parallel Execution", icon: <UsersThree className="w-4 h-4 text-emerald-600" /> },
+          { label: "Data Storage", val: "Google Drive / Local", sub: "Zero-Server Storage", icon: <HardDrive className="w-4 h-4 text-purple-600" /> },
+          { label: "Security Mode", val: "Client-Side Encrypted", sub: "100% Zero-Server", icon: <ShieldCheck className="w-4 h-4 text-cyan-600" /> }
+        ].map((stat, i) => (
+          <div key={i} className="p-4 bg-white rounded-2xl border border-stone-200/90 shadow-2xs space-y-1">
+            <div className="flex items-center justify-between text-stone-500 text-[11px] font-bold">
+              <span>{stat.label}</span>
+              {stat.icon}
             </div>
-            <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-[#2F6BFF] group-hover:translate-x-1 transition-all" />
+            <div className="font-display font-extrabold text-sm text-stone-900 truncate">{stat.val}</div>
+            <div className="text-[10px] text-stone-400 font-medium">{stat.sub}</div>
           </div>
-          <div>
-            <div className="text-sm font-bold text-stone-900">Code Workspace</div>
-            <div className="text-xs text-stone-500 mt-0.5">Bolt/Cursor style IDE &amp; Live Preview</div>
-          </div>
-        </Link>
-
-        <Link
-          to="/project/default/chat"
-          className="p-5 bg-white rounded-3xl border border-stone-200/80 hover:border-[#2F6BFF] shadow-2xs hover:shadow-md transition-all group flex flex-col justify-between space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-              <ChatCircleText className="w-5 h-5" />
-            </div>
-            <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
-          </div>
-          <div>
-            <div className="text-sm font-bold text-stone-900">New AI Chat</div>
-            <div className="text-xs text-stone-500 mt-0.5">Ask questions &amp; generate artifacts</div>
-          </div>
-        </Link>
-
-        <Link
-          to="/models"
-          className="p-5 bg-white rounded-3xl border border-stone-200/80 hover:border-[#2F6BFF] shadow-2xs hover:shadow-md transition-all group flex flex-col justify-between space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
-              <Sparkle className="w-5 h-5" />
-            </div>
-            <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" />
-          </div>
-          <div>
-            <div className="text-sm font-bold text-stone-900">Model Hub (BYOK)</div>
-            <div className="text-xs text-stone-500 mt-0.5">Connect NVIDIA NIM, OpenRouter &amp; Groq</div>
-          </div>
-        </Link>
-
-        <Link
-          to="/knowledge"
-          className="p-5 bg-white rounded-3xl border border-stone-200/80 hover:border-[#2F6BFF] shadow-2xs hover:shadow-md transition-all group flex flex-col justify-between space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-              <UploadSimple className="w-5 h-5" />
-            </div>
-            <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-amber-600 group-hover:translate-x-1 transition-all" />
-          </div>
-          <div>
-            <div className="text-sm font-bold text-stone-900">Knowledge Base</div>
-            <div className="text-xs text-stone-500 mt-0.5">Upload local files &amp; web URLs</div>
-          </div>
-        </Link>
+        ))}
       </div>
 
-      {/* Projects Section */}
+      {/* ══ QUICK ACTION LAUNCHER ══ */}
+      <div className="space-y-3">
+        <h2 className="font-display font-extrabold text-sm uppercase tracking-wider text-stone-400">
+          Instant Launchers
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link
+            to="/project/default/workspace"
+            className="p-5 bg-white rounded-3xl border border-stone-200/90 hover:border-[#2F6BFF] shadow-2xs hover:shadow-md transition-all group flex flex-col justify-between space-y-4 cursor-pointer"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-11 h-11 rounded-2xl bg-blue-50 text-[#2F6BFF] flex items-center justify-center font-bold shadow-inner">
+                <CodeBlock className="w-5 h-5" />
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-stone-400 group-hover:text-[#2F6BFF] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+            </div>
+            <div>
+              <div className="font-extrabold text-sm text-stone-900">Code Workspace &amp; IDE</div>
+              <div className="text-xs text-stone-500 mt-0.5">Monaco editor, sandbox preview &amp; AI swarm</div>
+            </div>
+          </Link>
+
+          <Link
+            to="/project/default/chat"
+            className="p-5 bg-white rounded-3xl border border-stone-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-md transition-all group flex flex-col justify-between space-y-4 cursor-pointer"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shadow-inner">
+                <ChatCircleText className="w-5 h-5" />
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-stone-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+            </div>
+            <div>
+              <div className="font-extrabold text-sm text-stone-900">AI Chat &amp; Brainstorm</div>
+              <div className="text-xs text-stone-500 mt-0.5">Deep reasoning, artifacts &amp; streaming</div>
+            </div>
+          </Link>
+
+          <Link
+            to="/models"
+            className="p-5 bg-white rounded-3xl border border-stone-200/90 hover:border-purple-500 shadow-2xs hover:shadow-md transition-all group flex flex-col justify-between space-y-4 cursor-pointer"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-11 h-11 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold shadow-inner">
+                <Cpu className="w-5 h-5" />
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-stone-400 group-hover:text-purple-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+            </div>
+            <div>
+              <div className="font-extrabold text-sm text-stone-900">Model Hub (460+ Models)</div>
+              <div className="text-xs text-stone-500 mt-0.5">NVIDIA NIM, Groq, OpenRouter &amp; Roles</div>
+            </div>
+          </Link>
+
+          <Link
+            to="/knowledge"
+            className="p-5 bg-white rounded-3xl border border-stone-200/90 hover:border-amber-500 shadow-2xs hover:shadow-md transition-all group flex flex-col justify-between space-y-4 cursor-pointer"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold shadow-inner">
+                <UploadSimple className="w-5 h-5" />
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-stone-400 group-hover:text-amber-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+            </div>
+            <div>
+              <div className="font-extrabold text-sm text-stone-900">Knowledge Base &amp; RAG</div>
+              <div className="text-xs text-stone-500 mt-0.5">Upload specs, documentation &amp; URLs</div>
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* ══ ACTIVE PROJECTS SECTION ══ */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-extrabold text-stone-900">Active Workspace Projects ({userProjects.length})</h2>
-          <Link to="/projects" className="text-xs font-bold text-[#2F6BFF] hover:underline">
-            View All Projects →
+          <div className="flex items-center gap-2">
+            <h2 className="font-display font-extrabold text-lg text-stone-900">Workspace Projects</h2>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
+              {userProjects.length}
+            </span>
+          </div>
+
+          <Link to="/projects" className="text-xs font-bold text-[#2F6BFF] hover:underline flex items-center gap-1">
+            <span>Manage All Projects</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         {userProjects.length === 0 ? (
-          <div className="p-12 bg-white rounded-3xl border border-stone-200/80 text-center space-y-3">
-            <FolderOpen className="w-8 h-8 text-stone-300 mx-auto" />
+          <div className="p-12 bg-white rounded-3xl border border-stone-200/90 text-center space-y-3 shadow-2xs">
+            <FolderOpen className="w-10 h-10 text-stone-300 mx-auto" />
             <div className="text-xs font-bold text-stone-700">No active projects found.</div>
             <button
               onClick={() => navigate("/projects")}
-              className="px-4 py-2 bg-[#2F6BFF] text-white text-xs font-bold rounded-xl hover:bg-blue-700"
+              className="px-4 py-2 bg-[#2F6BFF] text-white text-xs font-bold rounded-xl hover:bg-blue-700 cursor-pointer shadow-sm"
             >
               + Create Your First Project
             </button>
@@ -160,29 +206,29 @@ export default function DashboardPage() {
             {userProjects.map((proj) => (
               <div
                 key={proj.id}
-                className="p-6 bg-white rounded-3xl border border-stone-200/80 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+                className="p-6 bg-white rounded-3xl border border-stone-200/90 shadow-2xs hover:border-[#2F6BFF] hover:shadow-md transition-all flex flex-col justify-between space-y-4"
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-[#2F6BFF]">
+                    <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                       {proj.status || "Active"}
                     </span>
                     <span className="text-[10px] text-stone-400 font-mono">{proj.updated}</span>
                   </div>
-                  <h3 className="text-base font-bold text-stone-900">{proj.name}</h3>
-                  <p className="text-xs text-stone-500 mt-1 line-clamp-2">{proj.desc}</p>
+                  <h3 className="font-display font-extrabold text-base text-stone-900">{proj.name}</h3>
+                  <p className="text-xs text-stone-500 mt-1.5 line-clamp-2 leading-relaxed">{proj.desc}</p>
                 </div>
 
-                <div className="flex items-center gap-2 pt-3 border-t border-stone-100">
+                <div className="flex items-center gap-2 pt-4 border-t border-stone-100">
                   <button
                     onClick={() => navigate(`/project/${proj.slug || proj.id}/workspace`)}
-                    className="flex-1 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold rounded-xl text-center"
+                    className="flex-1 py-2 bg-[#2F6BFF] hover:bg-blue-700 text-white text-xs font-extrabold rounded-xl text-center shadow-xs transition-all cursor-pointer"
                   >
-                    Open Workspace
+                    Open IDE Workspace
                   </button>
                   <button
                     onClick={() => navigate(`/project/${proj.slug || proj.id}/chat`)}
-                    className="px-3 py-2 bg-[#2F6BFF] text-white text-xs font-bold rounded-xl hover:bg-blue-700"
+                    className="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold rounded-xl transition-all cursor-pointer"
                   >
                     Chat
                   </button>

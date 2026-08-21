@@ -72,28 +72,16 @@ export function getModelOsType(modelId = "") {
   if (idLower.includes("r1") || idLower.includes("o1") || idLower.includes("o3") || idLower.includes("reason") || idLower.includes("math") || idLower.includes("deepseek-r1")) {
     return { type: "REASONING", label: "🧠 Reasoning & Math LLM", color: "bg-blue-50 text-blue-700 border-blue-200" };
   }
-  if (idLower.includes("coder") || idLower.includes("code") || idLower.includes("starcoder") || idLower.includes("dbrx") || idLower.includes("llama-3.3") || idLower.includes("sonnet")) {
+  if (idLower.includes("coder") || idLower.includes("code") || idLower.includes("starcoder") || idLower.includes("dbrx") || idLower.includes("llama-3.3") || idLower.includes("sonnet") || idLower.includes("claude-3.5")) {
     return { type: "CODING", label: "💻 Code & Co-Working LLM", color: "bg-indigo-50 text-indigo-700 border-indigo-200" };
   }
-  if (idLower.includes("vision") || idLower.includes("vl") || idLower.includes("pixtral") || idLower.includes("llava") || idLower.includes("clip")) {
-    return { type: "VISION", label: "👁️ Multimodal Vision LLM", color: "bg-purple-50 text-purple-700 border-purple-200" };
-  }
-  if (idLower.includes("flux") || idLower.includes("sdxl") || idLower.includes("dall-e") || idLower.includes("image")) {
-    return { type: "IMAGE", label: "🎨 Image Gen Studio", color: "bg-pink-50 text-pink-700 border-pink-200" };
-  }
-  if (idLower.includes("video") || idLower.includes("runway") || idLower.includes("luma") || idLower.includes("svd")) {
-    return { type: "VIDEO", label: "🎬 Video Synthesis Engine", color: "bg-rose-50 text-rose-700 border-rose-200" };
-  }
-  if (idLower.includes("3d") || idLower.includes("shap-e") || idLower.includes("point-e") || idLower.includes("mesh")) {
-    return { type: "THREED", label: "📦 WebGL 3D Asset Engine", color: "bg-amber-50 text-amber-800 border-amber-200" };
-  }
-  if (idLower.includes("whisper") || idLower.includes("tts") || idLower.includes("speech") || idLower.includes("audio")) {
-    return { type: "SPEECH", label: "🎙️ Audio Studio Engine", color: "bg-cyan-50 text-cyan-700 border-cyan-200" };
-  }
-  if (idLower.includes("nemotron") || idLower.includes("mixtral") || idLower.includes("mistral-large") || idLower.includes("gpt-4")) {
+  if (idLower.includes("nemotron") || idLower.includes("mixtral") || idLower.includes("mistral-large") || idLower.includes("gpt-4") || idLower.includes("llama-3.1-405b")) {
     return { type: "FOUNDATION", label: "🏛️ Enterprise Foundation LLM", color: "bg-emerald-50 text-emerald-700 border-emerald-200" };
   }
-  return { type: "GENERAL", label: "⚡ General Purpose LLM", color: "bg-stone-100 text-stone-700 border-stone-200" };
+  if (idLower.includes("flash") || idLower.includes("mini") || idLower.includes("8b") || idLower.includes("turbo") || idLower.includes("haiku")) {
+    return { type: "FAST", label: "⚡ Fast Execution LLM", color: "bg-amber-50 text-amber-700 border-amber-200" };
+  }
+  return { type: "GENERAL", label: "✨ General Purpose LLM", color: "bg-stone-100 text-stone-700 border-stone-200" };
 }
 
 export default function ProviderManager() {
@@ -245,10 +233,9 @@ export default function ProviderManager() {
     }
   };
 
-  // Group Capability Slots into 3 intuitive sections for Tab 2
+  // Group Capability Slots into 2 intuitive sections for Tab 2
   const sectionIntelligence = capabilitySlots.filter((s) => ["reasoningModel", "codingModel", "reviewingModel", "planningModel"].includes(s.id));
   const sectionEngineering = capabilitySlots.filter((s) => ["debuggingModel", "testingModel", "documentationModel", "researchModel", "backgroundModel"].includes(s.id));
-  const sectionMultimodal = capabilitySlots.filter((s) => ["imageGenModel", "videoGenModel", "threeDGenModel", "speechModel", "visionModel"].includes(s.id));
 
   return (
     <div className="space-y-8 font-sans pb-16 relative">
@@ -273,7 +260,7 @@ export default function ProviderManager() {
           </div>
           <h2 className="text-3xl font-extrabold text-white tracking-tight">AI Models &amp; Capability Hub</h2>
           <p className="text-xs md:text-sm text-stone-300 mt-1.5 max-w-2xl leading-relaxed">
-            Search across 460+ live endpoints (NVIDIA NIM, OpenRouter, Local Ollama) and configure specialized LLM assignments for Main Reasoning, Co-Working Coding, Reviewing, WebGL 3D, and Multimodal Studios.
+            Search across 460+ live endpoints (NVIDIA NIM, OpenRouter, Groq, Ollama) and configure specialized LLM assignments for Deep Reasoning, Pair-Programming, Code Review, Architecture, and Autonomous Supervision.
           </p>
         </div>
 
@@ -427,7 +414,7 @@ export default function ProviderManager() {
                   <span>Universal Searchable Catalog ({filteredModels.length} models)</span>
                 </h3>
                 <p className="text-xs text-stone-500 mt-0.5">
-                  Filter by Free vs Paid, AI Creator (Meta, DeepSeek, NVIDIA), or OS LLM Type (Reasoning, Coding, Multimodal).
+                  Filter by Free vs Paid, AI Creator (Meta, DeepSeek, NVIDIA), or OS LLM Type (Reasoning, Coding, Enterprise).
                 </p>
               </div>
 
@@ -466,8 +453,8 @@ export default function ProviderManager() {
                   <option value="REASONING">🧠 Reasoning &amp; Deep Thinking</option>
                   <option value="CODING">💻 Code &amp; Co-Working Engine</option>
                   <option value="FOUNDATION">🏛️ Foundation Enterprise</option>
-                  <option value="VISION">👁️ Multimodal Vision</option>
-                  <option value="GENERAL">⚡ General Purpose</option>
+                  <option value="FAST">⚡ Fast Execution &amp; Speed</option>
+                  <option value="GENERAL">✨ General Purpose</option>
                 </select>
 
                 {/* Provider Filter Select */}
@@ -874,118 +861,8 @@ export default function ProviderManager() {
               })}
             </div>
           </div>
-
-          {/* Section C: Multimodal & Creative Studios */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 border-b border-stone-200 pb-2">
-              <span className="text-lg">🎨</span>
-              <h4 className="font-extrabold text-base text-stone-900">Multimodal &amp; Creative Studios</h4>
-              <span className="text-xs text-stone-400 font-mono">(Native Image Gen, Video Motion Engine, WebGL 3D Studio, Speech, Vision)</span>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4">
-              {sectionMultimodal.map((slot) => {
-                const assigned = capabilityMap[slot.id];
-                const activeFallback = activeModel || { id: "meta/llama-3.3-70b-instruct", name: "Llama 3.3 70B", providerName: "NVIDIA NIM" };
-                const currentModel = assigned || activeFallback;
-                const pricing = getModelPricing(currentModel, currentModel.providerName);
-                const osType = getModelOsType(currentModel.id);
-
-                return (
-                  <div
-                    key={slot.id}
-                    className={`p-5 rounded-3xl border transition-all flex flex-col justify-between gap-4 ${
-                      assigned
-                        ? "bg-white border-blue-200 shadow-sm"
-                        : "bg-stone-50/70 border-stone-200/80"
-                    }`}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl p-2 bg-stone-100 rounded-2xl">{slot.icon}</span>
-                          <div>
-                            <div className="font-extrabold text-sm text-stone-900">{slot.name}</div>
-                            <div className="text-[10px] text-stone-500 font-mono">{slot.id}</div>
-                          </div>
-                        </div>
-
-                        {assigned ? (
-                          <span className="text-[10px] font-extrabold bg-blue-100 text-[#2F6BFF] px-2 py-0.5 rounded-full">
-                            Designated
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
-                            Fallback
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Model Card Box inside Role Slot */}
-                      <div className="bg-stone-50/90 border border-stone-200/80 p-3.5 rounded-2xl space-y-2">
-                        <div className="flex items-center justify-between gap-1 flex-wrap">
-                          <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full border ${pricing.color}`}>
-                            {pricing.label}
-                          </span>
-                          <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md border ${osType.color}`}>
-                            {osType.label}
-                          </span>
-                        </div>
-
-                        <div>
-                          <div className="font-extrabold text-xs text-stone-900 truncate" title={currentModel.name}>
-                            {currentModel.name}
-                          </div>
-                          <div className="text-[10px] font-mono text-stone-500 truncate mt-0.5" title={currentModel.id}>
-                            {currentModel.id} • <span className="font-bold text-stone-700">{currentModel.providerName || "NVIDIA NIM"}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Slot Actions */}
-                    <div className="pt-2 flex items-center justify-end gap-1.5 flex-wrap">
-                      <button
-                        onClick={() => {
-                          setTestingModel(currentModel);
-                          setTestResult(null);
-                        }}
-                        className="px-2.5 py-1 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
-                      >
-                        <Play className="w-3 h-3 text-emerald-600" />
-                        <span>Test</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setSwapSlotId(slot.id);
-                          setSwapSearchQuery("");
-                        }}
-                        className="px-3 py-1 bg-[#2F6BFF] hover:bg-blue-700 text-white rounded-xl text-[11px] font-extrabold flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
-                      >
-                        <span>🔄 Swap</span>
-                      </button>
-
-                      {assigned && (
-                        <button
-                          onClick={() => {
-                            assignCapability(slot.id, null);
-                            showToast(`🔄 Reset ${slot.name} to general workspace fallback model.`);
-                          }}
-                          className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                          title="Reset to workspace fallback"
-                        >
-                          <Trash className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </div>
-      )}
+      </div>
 
       {/* MODAL A: ASSIGN ROLE MODAL (When clicking "📌 Assign Role" from Catalog) */}
       {assigningModel && (

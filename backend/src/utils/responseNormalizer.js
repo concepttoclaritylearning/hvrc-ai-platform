@@ -25,13 +25,10 @@ export function normalizeModelList(providerId, rawData) {
 
     const idLower = id.toLowerCase();
     const isEmbedding = idLower.includes("embed") || idLower.includes("rerank");
-    const isSpeech = idLower.includes("parakeet") || idLower.includes("riva") || idLower.includes("tts") || idLower.includes("whisper") || idLower.includes("audio") || idLower.includes("speech");
-    const isImage = idLower.includes("edify-image") || idLower.includes("sdxl") || idLower.includes("flux") || idLower.includes("dall-e") || idLower.includes("stable-diffusion") || idLower.includes("image");
-    const is3D = idLower.includes("edify-3d") || idLower.includes("mesh") || idLower.includes("3d");
     const isGuardrail = idLower.includes("guard") || idLower.includes("safety");
-    const isChat = !isEmbedding && !isSpeech && !isImage && !is3D && !isGuardrail;
+    const isChat = !isEmbedding && !isGuardrail;
 
-    const type = m.type || (isEmbedding ? "embedding" : isImage ? "image" : is3D ? "3d" : isSpeech ? "speech" : "chat");
+    const type = m.type || (isEmbedding ? "embedding" : isGuardrail ? "guardrail" : "chat");
 
     // Check if model is a free public endpoint
     const isFreePublic = providerId === "nvidia"
@@ -45,9 +42,6 @@ export function normalizeModelList(providerId, rawData) {
       type,
       isChat,
       isEmbedding,
-      isSpeech,
-      isImage,
-      is3D,
       isGuardrail,
       isFree: isFreePublic,
       badge: isFreePublic ? "Free Public Endpoint" : "Account Model"

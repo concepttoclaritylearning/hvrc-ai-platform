@@ -17,39 +17,19 @@ import {
   Trash
 } from "@phosphor-icons/react";
 import { useModel } from "@/ModelContext";
+import { useProject } from "@/context/ProjectContext";
 
 export default function DashboardPage() {
   const { activeModel } = useModel();
+  const { projects: userProjects, deleteProject } = useProject();
   const navigate = useNavigate();
-
-  const [userProjects, setUserProjects] = useState(() => {
-    const saved = localStorage.getItem("hvrc_user_projects");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {}
-    }
-    return [
-      {
-        id: "default",
-        name: "Default React Workspace",
-        slug: "default",
-        updated: "Active Now",
-        desc: "Interactive React IDE sandbox with live web compiler and Multi-Agent Swarms.",
-        status: "Active"
-      }
-    ];
-  });
 
   const handleDeleteProject = (projectId, projectName, e) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    const remaining = userProjects.filter((p) => p.id !== projectId);
-    setUserProjects(remaining);
-    localStorage.setItem("hvrc_user_projects", JSON.stringify(remaining));
+    deleteProject(projectId);
   };
 
   return (

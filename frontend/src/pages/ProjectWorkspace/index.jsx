@@ -33,6 +33,7 @@ import {
 } from "@phosphor-icons/react";
 import { useModel } from "@/ModelContext";
 import { useCapability } from "@/context/CapabilityContext";
+import { useProject } from "@/context/ProjectContext";
 import TaskBoard from "@/components/TaskBoard";
 import { saveAs } from "file-saver";
 
@@ -172,8 +173,8 @@ export default function App() {
   return (
     <div className="min-h-screen bg-white text-stone-900 p-8 font-sans">
       <div className="max-w-2xl mx-auto space-y-4">
-        <h1 className="text-3xl font-black">My New Project</h1>
-        <p className="text-stone-600">Start writing your React code here or prompt the AI Swarm on the right!</p>
+        <h1 className="text-3xl font-black">My New App</h1>
+        <p className="text-stone-600">Start writing your React components here, or prompt the AI Swarm on the right!</p>
       </div>
     </div>
   );
@@ -192,15 +193,58 @@ export default function App() {
 export default function ProjectWorkspace() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { projects } = useProject();
   const { activeModel, availableChatModels, userSelectedModels, selectModel } = useModel();
   const { capabilityMap } = useCapability();
 
-  // 1. Virtual File System State
-  const [files, setFiles] = useState(REACT_STARTER_FILES);
+  const currentProject = projects.find((p) => p.slug === slug || p.id === slug) || null;
+
+  // 1. Virtual File System State (Keyed Per Project)
+  const [files, setFiles] = useState(() => {
+    const saved = localStorage.getItem(`hvrc_files_${slug || "default"}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    if (currentProject?.template === "blank") {
+      return BLANK_STARTER_FILES;
+    }
+    return REACT_STARTER_FILES;
+  });
+
   const [activeFilePath, setActiveFilePath] = useState("src/App.jsx");
   const [openTabs, setOpenTabs] = useState(["src/App.jsx", "src/index.css"]);
   const [newFileName, setNewFileName] = useState("");
   const [isCreatingFile, setIsCreatingFile] = useState(false);
+
+  // Sync files when route slug changes
+  useEffect(() => {
+    const saved = localStorage.getItem(`hvrc_files_${slug || "default"}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setFiles(parsed);
+          setActiveFilePath(parsed[0]?.path || "src/App.jsx");
+          return;
+        }
+      } catch (e) {}
+    }
+    if (currentProject?.template === "blank") {
+      setFiles(BLANK_STARTER_FILES);
+      setActiveFilePath("src/App.jsx");
+    } else {
+      setFiles(REACT_STARTER_FILES);
+      setActiveFilePath("src/App.jsx");
+    }
+  }, [slug, currentProject?.template]);
+
+  // Persist files per project
+  useEffect(() => {
+    localStorage.setItem(`hvrc_files_${slug || "default"}`, JSON.stringify(files));
+  }, [files, slug]);
 
   // 2. Shiftable Views & Resizable Split State
   const [workspaceViewMode, setWorkspaceViewMode] = useState("split"); // 'code' | 'preview' | 'split'
@@ -232,9 +276,10 @@ export default function ProjectWorkspace() {
   );
 
   const activeModelDisplayName =
-    userSelectedModels?.find((m) => m.id === selectedChatModelId)?.name ||
     activeModel?.name ||
-    "Llama 3.3 70B (NVIDIA NIM)";
+    userSelectedModels?.find((m) => m.id === selectedChatModelId)?.name ||
+    selectedChatModelId ||
+    "Meta Llama 3.3 70B (NVIDIA NIM)";
 
   const [chatMessages, setChatMessages] = useState([
     {
@@ -242,8 +287,8 @@ export default function ProjectWorkspace() {
       sender: "ai",
       role: "primary",
       roleLabel: "Primary Orchestrator",
-      modelName: "Llama 3.3 70B (NVIDIA NIM)",
-      text: `👋 Welcome to your interactive IDE Workspace! I am your Primary Orchestrator. 
+      modelName: activeModelDisplayName,
+      text: `👋 Welcome to workspace "${slug || "default"}"! I am your Primary Orchestrator. 
 
 You can switch between specialist Co-Workers below (Reviewer, Tester, Bug Hunter, Docs, Architect) and prompt us to build, refactor, or audit code in real-time.`,
       timestamp: "Just now"
@@ -563,7 +608,7 @@ Suite: 2 passed, 2 total. Time: 38ms`
 
     const resolvedModel =
       capabilityMap[activeAgentRole] ||
-      activeModel || { id: selectedChatModelId, name: selectedChatModelId, providerName: "NVIDIA NIM" };
+      activeModel || { id: selectedChatModelId, name: activeModelDisplayName, providerName: "AI Gateway" };
 
     const rolePrompts = {
       primary: `You are the Primary AI Orchestrator in HVRC.AI. Coordinate the project strategy, generate clean React + Tailwind code for App.jsx, and explain changes clearly.`,
@@ -648,7 +693,7 @@ Suite: 2 passed, 2 total. Time: 38ms`
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/projects")}
-            className="p-1.5 text-stone-500 hover:text-stone-900 rounded-lg hover:bg-stone-100 transition-colors"
+            className="p-1.5 text-stone-500 hover:text-stone-900 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
             title="Back to Projects"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -864,7 +909,7 @@ Suite: 2 passed, 2 total. Time: 38ms`
 
                   <button
                     onClick={(e) => handleDeleteFile(file.path, e)}
-                    className="opacity-0 group-hover:opacity-100 text-stone-400 hover:text-rose-600 p-0.5 transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 text-stone-400 hover:text-rose-600 p-0.5 transition-opacity cursor-pointer"
                     title="Delete File"
                   >
                     <Trash className="w-3.5 h-3.5" />
@@ -904,7 +949,7 @@ Suite: 2 passed, 2 total. Time: 38ms`
                       <span>{tabFileName}</span>
                       <button
                         onClick={(e) => handleCloseTab(tabPath, e)}
-                        className="text-stone-500 hover:text-white p-0.5 rounded"
+                        className="text-stone-500 hover:text-white p-0.5 rounded cursor-pointer"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -1136,11 +1181,17 @@ Suite: 2 passed, 2 total. Time: 38ms`
               <span className="text-stone-500 font-bold">Designated Engine:</span>
               <select
                 value={selectedChatModelId}
-                onChange={(e) => setSelectedChatModelId(e.target.value)}
+                onChange={(e) => {
+                  setSelectedChatModelId(e.target.value);
+                  const matched = (userSelectedModels || availableChatModels || []).find(m => m.id === e.target.value);
+                  if (matched) selectModel("universal", matched);
+                }}
                 className="bg-stone-50 border border-stone-200 rounded-lg px-2 py-0.5 text-[11px] font-bold text-stone-800 outline-none max-w-[180px] truncate cursor-pointer"
               >
                 {(userSelectedModels || availableChatModels || [
-                  { id: "meta/llama-3.3-70b-instruct", name: "Llama 3.3 70B (NVIDIA NIM)" }
+                  { id: "meta/llama-3.3-70b-instruct", name: "Meta Llama 3.3 70B" },
+                  { id: "deepseek-ai/deepseek-r1", name: "DeepSeek R1" },
+                  { id: "openai/gpt-4o", name: "OpenAI GPT-4o" }
                 ]).map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name || m.id}
@@ -1160,7 +1211,7 @@ Suite: 2 passed, 2 total. Time: 38ms`
                     <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-stone-500 flex-wrap">
                       <span className="text-blue-600 font-bold">{msg.roleLabel}</span>
                       <span>•</span>
-                      <span className="font-mono text-stone-600 bg-stone-100 px-1.5 py-0.2 rounded">{msg.modelName || "NVIDIA NIM"}</span>
+                      <span className="font-mono text-stone-600 bg-stone-100 px-1.5 py-0.2 rounded">{msg.modelName || activeModelDisplayName}</span>
                       <span>•</span>
                       <span className="font-mono text-stone-400">{msg.timestamp}</span>
                     </div>

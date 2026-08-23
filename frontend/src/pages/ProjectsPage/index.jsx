@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FolderPlus,
   FolderOpen,
   CodeBlock,
-  ChatCircleText,
   MagnifyingGlass,
   Sparkle,
   Trash,
@@ -14,108 +13,49 @@ import {
   CheckCircle,
   HardDrive
 } from "@phosphor-icons/react";
-
-const DEFAULT_STARTER_PROJECTS = [
-  {
-    id: "default",
-    name: "Default React Workspace",
-    slug: "default",
-    updated: "Active Now",
-    desc: "Interactive React IDE sandbox with live web compiler and Multi-Agent Swarms.",
-    status: "Active",
-    template: "react"
-  },
-  {
-    id: "proj-agent-suite",
-    name: "AI Agent Orchestrator Suite",
-    slug: "agent-suite",
-    updated: "1 hour ago",
-    desc: "Parallel multi-agent workflow routines with Reviewer, Tester, and Bug Hunter.",
-    status: "Active",
-    template: "agents"
-  },
-  {
-    id: "proj-rag-kb",
-    name: "Vector Knowledge Base & RAG",
-    slug: "rag-kb",
-    updated: "Yesterday",
-    desc: "Vector embeddings, PDF document search, and technical grounding pipeline.",
-    status: "Active",
-    template: "rag"
-  }
-];
+import { useProject } from "@/context/ProjectContext";
 
 export default function ProjectsPage() {
   const navigate = useNavigate();
+  const { projects, createProject, deleteProject, resetToDefaults } = useProject();
+
   const [query, setQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newTemplate, setNewTemplate] = useState("blank"); // 'blank' | 'react'
 
-  // Persistent user projects state in localStorage
-  const [projects, setProjects] = useState(() => {
-    const saved = localStorage.getItem("hvrc_user_projects");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {}
-    }
-    return DEFAULT_STARTER_PROJECTS;
-  });
-
-  useEffect(() => {
-    localStorage.setItem("hvrc_user_projects", JSON.stringify(projects));
-  }, [projects]);
-
   const filtered = projects.filter(
     (p) =>
       p.name.toLowerCase().includes(query.toLowerCase()) ||
-      p.desc.toLowerCase().includes(query.toLowerCase())
+      p.desc?.toLowerCase().includes(query.toLowerCase())
   );
 
   const handleCreate = (e) => {
     e.preventDefault();
     if (!newName.trim()) return;
 
-    const slug = newName
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
-
-    const newProject = {
-      id: `proj-${Date.now()}`,
+    const created = createProject({
       name: newName.trim(),
-      slug: slug || `project-${Date.now()}`,
-      updated: "Just now",
-      desc: newDesc.trim() || (newTemplate === "blank" ? "Clean blank workspace created from scratch." : "Interactive full-stack React workspace."),
-      status: "Active",
+      desc: newDesc.trim(),
       template: newTemplate
-    };
+    });
 
-    setProjects([newProject, ...projects]);
     setNewName("");
     setNewDesc("");
     setShowModal(false);
-    navigate(`/project/${newProject.slug}/workspace`);
+
+    if (created?.slug) {
+      navigate(`/project/${created.slug}/workspace`);
+    }
   };
 
-  const handleDeleteProject = (projectId, projectName, e) => {
+  const handleDeleteProject = (projectId, e) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    const remaining = projects.filter((p) => p.id !== projectId);
-    setProjects(remaining);
-    localStorage.setItem("hvrc_user_projects", JSON.stringify(remaining));
-  };
-
-  const handleResetToDefaults = () => {
-    if (confirm("Reset to default starter projects?")) {
-      setProjects(DEFAULT_STARTER_PROJECTS);
-    }
+    deleteProject(projectId);
   };
 
   return (
@@ -132,7 +72,7 @@ export default function ProjectsPage() {
             Workspace Projects ({projects.length})
           </h1>
           <p className="text-stone-600 text-xs sm:text-sm mt-1">
-            Every project has its own dedicated files, live sandbox IDE, and Multi-Agent Swarm conversations.
+            Every project has its own dedicated files, live sandbox IDE, and isolated AI swarms.
           </p>
         </div>
 
@@ -161,8 +101,8 @@ export default function ProjectsPage() {
         </div>
 
         <button
-          onClick={handleResetToDefaults}
-          className="text-[11px] font-bold text-stone-400 hover:text-stone-700 px-2 py-1 rounded-lg hover:bg-stone-100 transition-colors"
+          onClick={resetToDefaults}
+          className="text-[11px] font-bold text-stone-400 hover:text-stone-700 px-2 py-1 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
           title="Restore default templates"
         >
           Reset Defaults
@@ -174,7 +114,7 @@ export default function ProjectsPage() {
         <div className="p-12 bg-white rounded-3xl border border-stone-200/90 text-center space-y-3 shadow-2xs">
           <FolderOpen className="w-10 h-10 text-stone-300 mx-auto" />
           <div className="text-sm font-extrabold text-stone-700">No matching projects found.</div>
-          <p className="text-xs text-stone-500">Create a new project or clear your search query.</p>
+          <p className="text-xs text-stone-500">Create a new project or restore defaults.</p>
           <button
             onClick={() => setShowModal(true)}
             className="px-4 py-2 bg-[#2F6BFF] text-white text-xs font-bold rounded-xl hover:bg-blue-700 cursor-pointer shadow-sm"
@@ -204,7 +144,7 @@ export default function ProjectsPage() {
 
                   {/* Direct Delete Project Button */}
                   <button
-                    onClick={(e) => handleDeleteProject(p.id, p.name, e)}
+                    onClick={(e) => handleDeleteProject(p.id, e)}
                     className="p-2 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
                     title={`Delete "${p.name}"`}
                   >
@@ -303,7 +243,7 @@ export default function ProjectsPage() {
                       <span>📄</span>
                       <span>Blank Canvas</span>
                     </div>
-                    <div className="text-[10px] text-stone-500 mt-1">Start completely fresh from zero code.</div>
+                    <div className="text-[10px] text-stone-500 mt-1">Start completely fresh with empty App.jsx.</div>
                   </button>
 
                   <button

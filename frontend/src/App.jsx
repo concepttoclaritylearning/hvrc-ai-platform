@@ -17,6 +17,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import ErrorBoundaryFallback from "./components/ErrorBoundaryFallback";
 
 import { ModelProvider } from "./ModelContext";
+import { ProjectProvider } from "./context/ProjectContext";
 
 export default function App() {
   const location = useLocation();
@@ -32,14 +33,16 @@ export default function App() {
             <AuthProvider>
               <LogoProvider>
                 <PfpProvider>
-                  <ModelProvider>
-                    <I18nextProvider i18n={i18n}>
-                      <Outlet />
-                      <ToastContainer />
-                      <KeyboardShortcutsHelp />
-                      <ImageLightbox />
-                    </I18nextProvider>
-                  </ModelProvider>
+                  <ProjectProvider>
+                    <ModelProvider>
+                      <I18nextProvider i18n={i18n}>
+                        <Outlet />
+                        <ToastContainer />
+                        <KeyboardShortcutsHelp />
+                        <ImageLightbox />
+                      </I18nextProvider>
+                    </ModelProvider>
+                  </ProjectProvider>
                 </PfpProvider>
               </LogoProvider>
             </AuthProvider>

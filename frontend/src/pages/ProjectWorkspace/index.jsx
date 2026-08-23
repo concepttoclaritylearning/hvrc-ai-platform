@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Code,
@@ -19,22 +19,25 @@ import {
   CheckCircle,
   PaperPlane,
   X,
-  CaretDown,
-  CaretRight,
   ArrowsOut,
   ArrowsIn,
   Kanban,
   FileText,
   Copy,
-  Lightning
+  Lightning,
+  Columns,
+  Cpu,
+  ArrowsLeftRight,
+  Eraser,
+  ArrowLeft
 } from "@phosphor-icons/react";
 import { useModel } from "@/ModelContext";
 import { useCapability } from "@/context/CapabilityContext";
 import TaskBoard from "@/components/TaskBoard";
 import { saveAs } from "file-saver";
 
-// Initial Virtual Project Files
-const INITIAL_PROJECT_FILES = [
+// 1. Starter Templates
+const REACT_STARTER_FILES = [
   {
     name: "App.jsx",
     path: "src/App.jsx",
@@ -43,7 +46,6 @@ const INITIAL_PROJECT_FILES = [
 
 export default function App() {
   const [count, setCount] = useState(0);
-  const [activeTab, setActiveTab] = useState("features");
 
   return (
     <div className="min-h-screen bg-[#FAF8F4] text-[#1C1917] font-sans p-6 sm:p-10 flex flex-col items-center justify-center">
@@ -72,13 +74,13 @@ export default function App() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setCount(count - 1)}
-              className="w-9 h-9 rounded-xl bg-white border border-stone-200 text-stone-700 font-bold hover:bg-stone-100 transition-colors shadow-2xs"
+              className="w-9 h-9 rounded-xl bg-white border border-stone-200 text-stone-700 font-bold hover:bg-stone-100 transition-colors shadow-2xs cursor-pointer"
             >
               -
             </button>
             <button
               onClick={() => setCount(count + 1)}
-              className="w-9 h-9 rounded-xl bg-[#2F6BFF] text-white font-bold hover:bg-blue-700 transition-colors shadow-sm"
+              className="w-9 h-9 rounded-xl bg-[#2F6BFF] text-white font-bold hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
             >
               +
             </button>
@@ -105,7 +107,7 @@ export default function App() {
         </div>
 
         <div className="pt-2 text-[11px] text-stone-400 font-medium">
-          Edit code in the left editor panel to see real-time updates!
+          Edit code in the editor panel to see real-time updates!
         </div>
 
       </div>
@@ -123,7 +125,7 @@ export default function App() {
 
 body {
   margin: 0;
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: #FAF8F4;
   color: #1C1917;
 }`
@@ -134,11 +136,11 @@ body {
     isDir: false,
     content: `import React from "react";
 
-export default function Header({ title = "HVRC App" }) {
+export default function Header({ title = "My Project" }) {
   return (
     <header className="px-6 py-4 bg-white border-b border-stone-200 flex items-center justify-between">
-      <div className="font-black text-lg text-stone-900">{title}</div>
-      <div className="text-xs text-stone-400 font-mono">Live Sandbox</div>
+      <div className="font-bold text-base text-stone-900">{title}</div>
+      <div className="text-xs text-stone-400 font-mono">HVRC Live IDE</div>
     </header>
   );
 }`
@@ -150,13 +152,40 @@ export default function Header({ title = "HVRC App" }) {
     content: `{
   "name": "hvrc-live-workspace",
   "version": "1.0.0",
-  "private": true,
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "tailwindcss": "^3.4.0"
   }
 }`
+  }
+];
+
+const BLANK_STARTER_FILES = [
+  {
+    name: "App.jsx",
+    path: "src/App.jsx",
+    isDir: false,
+    content: `import React, { useState } from "react";
+
+export default function App() {
+  return (
+    <div className="min-h-screen bg-white text-stone-900 p-8 font-sans">
+      <div className="max-w-2xl mx-auto space-y-4">
+        <h1 className="text-3xl font-black">My New Project</h1>
+        <p className="text-stone-600">Start writing your React code here or prompt the AI Swarm on the right!</p>
+      </div>
+    </div>
+  );
+}`
+  },
+  {
+    name: "index.css",
+    path: "src/index.css",
+    isDir: false,
+    content: `@tailwind base;
+@tailwind components;
+@tailwind utilities;`
   }
 ];
 
@@ -167,28 +196,33 @@ export default function ProjectWorkspace() {
   const { capabilityMap } = useCapability();
 
   // 1. Virtual File System State
-  const [files, setFiles] = useState(INITIAL_PROJECT_FILES);
+  const [files, setFiles] = useState(REACT_STARTER_FILES);
   const [activeFilePath, setActiveFilePath] = useState("src/App.jsx");
   const [openTabs, setOpenTabs] = useState(["src/App.jsx", "src/index.css"]);
-  const [fileSearchQuery, setFileSearchQuery] = useState("");
   const [newFileName, setNewFileName] = useState("");
   const [isCreatingFile, setIsCreatingFile] = useState(false);
 
-  // 2. Sandbox Compiler & Viewport State
+  // 2. Shiftable Views & Resizable Split State
+  const [workspaceViewMode, setWorkspaceViewMode] = useState("split"); // 'code' | 'preview' | 'split'
+  const [splitWidthPercent, setSplitWidthPercent] = useState(50); // % for code editor width
+  const [isDraggingSplit, setIsDraggingSplit] = useState(false);
+  const splitContainerRef = useRef(null);
+
+  // 3. Sandbox Compiler & Viewport State
   const [previewViewport, setPreviewViewport] = useState("desktop"); // 'desktop' | 'tablet' | 'mobile'
   const [iframeSrcDoc, setIframeSrcDoc] = useState("");
   const [previewKey, setPreviewKey] = useState(Date.now());
   const [consoleLogs, setConsoleLogs] = useState([]);
   const [bottomTab, setBottomTab] = useState("preview"); // 'preview' | 'diagnostics' | 'terminal' | 'taskboard'
 
-  // 3. Terminal Simulator State
+  // 4. Terminal Simulator State
   const [terminalInput, setTerminalInput] = useState("");
   const [terminalHistory, setTerminalHistory] = useState([
     { type: "info", text: "⚡ HVRC.AI Zero-Server Shell v3.0 initialized." },
     { type: "info", text: "Type 'help' to view available commands." }
   ]);
 
-  // 4. Multi-Agent Swarm Chat State
+  // 5. Multi-Agent Swarm Chat State
   const [activeAgentRole, setActiveAgentRole] = useState("primary"); // 'primary' | 'reviewer' | 'tester' | 'bughunter' | 'writer' | 'architect'
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(true);
   const [aiPrompt, setAiPrompt] = useState("");
@@ -196,15 +230,22 @@ export default function ProjectWorkspace() {
   const [selectedChatModelId, setSelectedChatModelId] = useState(
     activeModel?.id || "meta/llama-3.3-70b-instruct"
   );
+
+  const activeModelDisplayName =
+    userSelectedModels?.find((m) => m.id === selectedChatModelId)?.name ||
+    activeModel?.name ||
+    "Llama 3.3 70B (NVIDIA NIM)";
+
   const [chatMessages, setChatMessages] = useState([
     {
       id: "m-1",
       sender: "ai",
       role: "primary",
       roleLabel: "Primary Orchestrator",
+      modelName: "Llama 3.3 70B (NVIDIA NIM)",
       text: `👋 Welcome to your interactive IDE Workspace! I am your Primary Orchestrator. 
 
-You can switch between specialist Co-Workers below (Reviewer, Tester, Bug Hunter, Docs, Architect) and prompt us to generate, refactor, or audit code in real-time.`,
+You can switch between specialist Co-Workers below (Reviewer, Tester, Bug Hunter, Docs, Architect) and prompt us to build, refactor, or audit code in real-time.`,
       timestamp: "Just now"
     }
   ]);
@@ -230,13 +271,48 @@ You can switch between specialist Co-Workers below (Reviewer, Tester, Bug Hunter
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
+  // ══ DRAGGABLE RESIZABLE SPLIT BAR HANDLERS ══
+  const handleMouseDownSplit = (e) => {
+    e.preventDefault();
+    setIsDraggingSplit(true);
+  };
+
+  const handleMouseMoveSplit = useCallback(
+    (e) => {
+      if (!isDraggingSplit || !splitContainerRef.current) return;
+      const rect = splitContainerRef.current.getBoundingClientRect();
+      const newPercent = ((e.clientX - rect.left) / rect.width) * 100;
+      if (newPercent >= 20 && newPercent <= 80) {
+        setSplitWidthPercent(newPercent);
+      }
+    },
+    [isDraggingSplit]
+  );
+
+  const handleMouseUpSplit = useCallback(() => {
+    if (isDraggingSplit) setIsDraggingSplit(false);
+  }, [isDraggingSplit]);
+
+  useEffect(() => {
+    if (isDraggingSplit) {
+      window.addEventListener("mousemove", handleMouseMoveSplit);
+      window.addEventListener("mouseup", handleMouseUpSplit);
+    } else {
+      window.removeEventListener("mousemove", handleMouseMoveSplit);
+      window.removeEventListener("mouseup", handleMouseUpSplit);
+    }
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMoveSplit);
+      window.removeEventListener("mouseup", handleMouseUpSplit);
+    };
+  }, [isDraggingSplit, handleMouseMoveSplit, handleMouseUpSplit]);
+
   // ══ COMPILE IN-BROWSER REACT SANDBOX ══
   useEffect(() => {
     const appFile = files.find((f) => f.path === "src/App.jsx")?.content || "";
     const cssFile = files.find((f) => f.path === "src/index.css")?.content || "";
     const headerFile = files.find((f) => f.path === "src/components/Header.jsx")?.content || "";
 
-    // Build the standalone in-browser runner
     const cleanAppCode = appFile
       .replace(/import\s+React.*?from\s+['"].*?['"];?/g, "")
       .replace(/import\s+.*?from\s+['"].*?['"];?/g, "")
@@ -266,7 +342,6 @@ You can switch between specialist Co-Workers below (Reviewer, Tester, Bug Hunter
   <div id="root"></div>
 
   <script>
-    // Intercept console and forward to IDE
     ['log', 'warn', 'error'].forEach(type => {
       const orig = console[type];
       console[type] = function(...args) {
@@ -311,14 +386,12 @@ You can switch between specialist Co-Workers below (Reviewer, Tester, Bug Hunter
     setIframeSrcDoc(htmlDoc);
   }, [files, previewKey]);
 
-  // Handle active file code edit
   const handleCodeChange = (newCode) => {
     setFiles((prev) =>
       prev.map((f) => (f.path === activeFilePath ? { ...f, content: newCode } : f))
     );
   };
 
-  // Open / Switch tabs
   const handleSelectFile = (path) => {
     setActiveFilePath(path);
     if (!openTabs.includes(path)) {
@@ -350,7 +423,7 @@ You can switch between specialist Co-Workers below (Reviewer, Tester, Bug Hunter
       name: cleanPath.split("/").pop(),
       path: cleanPath,
       isDir: false,
-      content: `// New file: ${cleanPath}\nimport React from "react";\n\nexport default function Component() {\n  return <div>Component</div>;\n}\n`
+      content: `// ${cleanPath}\nimport React from "react";\n\nexport default function Component() {\n  return <div>Component</div>;\n}\n`
     };
 
     setFiles([...files, newFileObj]);
@@ -373,6 +446,22 @@ You can switch between specialist Co-Workers below (Reviewer, Tester, Bug Hunter
       if (activeFilePath === path) {
         setActiveFilePath(updated[0]?.path || "");
       }
+    }
+  };
+
+  const handleClearToBlank = () => {
+    if (confirm("Reset to clean Blank Project? All template code will be cleared.")) {
+      setFiles(BLANK_STARTER_FILES);
+      setActiveFilePath("src/App.jsx");
+      setOpenTabs(["src/App.jsx", "src/index.css"]);
+    }
+  };
+
+  const handleLoadStarter = () => {
+    if (confirm("Load React Starter Template with interactive counter demo?")) {
+      setFiles(REACT_STARTER_FILES);
+      setActiveFilePath("src/App.jsx");
+      setOpenTabs(["src/App.jsx", "src/index.css"]);
     }
   };
 
@@ -428,7 +517,7 @@ You can switch between specialist Co-Workers below (Reviewer, Tester, Bug Hunter
           type: "output",
           text: `Building workspace bundle...
 ✓ Transformed ${files.length} modules
-✓ In-browser Babel standalone compiler: OK
+✓ In-browser Babel compiler: OK
 ✓ Bundle size: ${(files.reduce((acc, f) => acc + f.content.length, 0) / 1024).toFixed(2)} kB
 ✓ Zero compilation errors.`
         });
@@ -438,9 +527,8 @@ You can switch between specialist Co-Workers below (Reviewer, Tester, Bug Hunter
           type: "output",
           text: `Running Vitest / Jest synthetic suite:
 ✓ App.jsx mounts with zero unhandled exceptions (PASS)
-✓ Counter state increment / decrement assertion (PASS)
-✓ Responsive viewport container tests (PASS)
-Suite: 3 passed, 3 total. Time: 42ms`
+✓ State reactivity assertion (PASS)
+Suite: 2 passed, 2 total. Time: 38ms`
         });
         break;
       case "clear":
@@ -476,12 +564,10 @@ Suite: 3 passed, 3 total. Time: 42ms`
     setChatMessages((prev) => [...prev, newMsg]);
     setIsAiLoading(true);
 
-    // Resolve target capability model with single-model fallback
     const resolvedModel =
       capabilityMap[activeAgentRole] ||
-      activeModel || { id: selectedChatModelId, name: selectedChatModelId, providerName: "Universal Gateway" };
+      activeModel || { id: selectedChatModelId, name: selectedChatModelId, providerName: "NVIDIA NIM" };
 
-    // Specialist role system prompts
     const rolePrompts = {
       primary: `You are the Primary AI Orchestrator in HVRC.AI. Coordinate the project strategy, generate clean React + Tailwind code for App.jsx, and explain changes clearly.`,
       reviewer: `You are the Code Reviewer Worker in HVRC.AI. Perform a rigorous security, accessibility, and pattern audit of the current workspace code. Provide clear severity tags: [HIGH], [MEDIUM], [LOW].`,
@@ -541,6 +627,7 @@ Suite: 3 passed, 3 total. Time: 42ms`
           sender: "ai",
           role: activeAgentRole,
           roleLabel: roleLabels[activeAgentRole],
+          modelName: resolvedModel.name || resolvedModel.id,
           text: `[${roleLabels[activeAgentRole]}] I processed your request: "${userPrompt}".\n\nHere is the recommended update for **${activeFile.name}**:\n\`\`\`jsx\n// Verified update by ${roleLabels[activeAgentRole]}\n${activeFile.content}\n\`\`\``,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         }
@@ -562,6 +649,14 @@ Suite: 3 passed, 3 total. Time: 42ms`
       {/* ══ TOP IDE ACTION BAR (LIGHT CREAM THEME) ══ */}
       <header className="h-12 bg-white border-b border-stone-200/90 px-4 flex items-center justify-between shrink-0 shadow-2xs z-10">
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/projects")}
+            className="p-1.5 text-stone-500 hover:text-stone-900 rounded-lg hover:bg-stone-100 transition-colors"
+            title="Back to Projects"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-blue-50 text-[#2F6BFF] flex items-center justify-center font-bold">
               <Code className="w-4 h-4" />
@@ -571,14 +666,60 @@ Suite: 3 passed, 3 total. Time: 42ms`
             </span>
           </div>
 
-          <span className="text-[10px] font-mono font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md border border-emerald-200 hidden sm:inline">
-            Hot-Reloading Live
-          </span>
+          {/* Active Model Indicator Pill */}
+          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50/80 text-[#2F6BFF] border border-blue-200/70 text-[11px] font-bold">
+            <Cpu className="w-3.5 h-3.5 text-[#2F6BFF]" />
+            <span>Active Model: {activeModelDisplayName}</span>
+          </div>
         </div>
 
-        {/* Viewport and Project Actions */}
+        {/* View Mode Shiftable Switcher + Controls */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center bg-stone-100 p-0.5 rounded-xl border border-stone-200 text-stone-600">
+          
+          {/* ══ SHIFTABLE VIEW MODE BUTTONS ══ */}
+          <div className="flex items-center bg-stone-100 p-0.5 rounded-xl border border-stone-200 text-stone-700">
+            <button
+              onClick={() => setWorkspaceViewMode("code")}
+              className={`px-2.5 py-1 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+                workspaceViewMode === "code"
+                  ? "bg-white text-[#2F6BFF] shadow-2xs"
+                  : "hover:text-stone-900"
+              }`}
+              title="Full Code Editor View"
+            >
+              <Code className="w-3.5 h-3.5" />
+              <span>Code Only</span>
+            </button>
+
+            <button
+              onClick={() => setWorkspaceViewMode("split")}
+              className={`px-2.5 py-1 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+                workspaceViewMode === "split"
+                  ? "bg-white text-[#2F6BFF] shadow-2xs"
+                  : "hover:text-stone-900"
+              }`}
+              title="Side-by-side Split View"
+            >
+              <Columns className="w-3.5 h-3.5" />
+              <span>Split View</span>
+            </button>
+
+            <button
+              onClick={() => setWorkspaceViewMode("preview")}
+              className={`px-2.5 py-1 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+                workspaceViewMode === "preview"
+                  ? "bg-white text-[#2F6BFF] shadow-2xs"
+                  : "hover:text-stone-900"
+              }`}
+              title="Full Live Web Preview"
+            >
+              <Browsers className="w-3.5 h-3.5" />
+              <span>Preview Only</span>
+            </button>
+          </div>
+
+          {/* Viewport Device Switcher */}
+          <div className="hidden lg:flex items-center bg-stone-100 p-0.5 rounded-xl border border-stone-200 text-stone-600">
             <button
               onClick={() => setPreviewViewport("desktop")}
               className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
@@ -620,7 +761,7 @@ Suite: 3 passed, 3 total. Time: 42ms`
           <button
             onClick={handleExportZip}
             className="px-3 py-1.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
-            title="Download Workspace as JSON/ZIP"
+            title="Download Workspace JSON/ZIP"
           >
             <DownloadSimple className="w-3.5 h-3.5" />
             <span>Export</span>
@@ -640,19 +781,41 @@ Suite: 3 passed, 3 total. Time: 42ms`
         </div>
       </header>
 
-      {/* ══ MAIN WORKSPACE 3-PANE GRID ══ */}
+      {/* ══ MAIN WORKSPACE LAYOUT ══ */}
       <div className="flex-1 flex overflow-hidden">
         
         {/* ══ PANE 1: VIRTUAL FILE EXPLORER ══ */}
         <aside className="w-56 bg-white border-r border-stone-200/90 flex flex-col shrink-0">
           <div className="p-3 border-b border-stone-100 flex items-center justify-between">
             <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">Project Files</span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setIsCreatingFile(!isCreatingFile)}
+                className="p-1 hover:bg-stone-100 text-[#2F6BFF] rounded-lg transition-colors cursor-pointer"
+                title="Add New File"
+              >
+                <Plus className="w-4 h-4 font-bold" />
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Template Switcher */}
+          <div className="p-2 border-b border-stone-100 flex items-center gap-1 text-[10px]">
             <button
-              onClick={() => setIsCreatingFile(!isCreatingFile)}
-              className="p-1 hover:bg-stone-100 text-[#2F6BFF] rounded-lg transition-colors cursor-pointer"
-              title="Add New File"
+              onClick={handleClearToBlank}
+              className="flex-1 py-1 px-1.5 bg-stone-50 hover:bg-stone-100 text-stone-600 rounded-lg font-bold flex items-center justify-center gap-1 border border-stone-200 cursor-pointer"
+              title="Clear all files to blank canvas"
             >
-              <Plus className="w-4 h-4 font-bold" />
+              <Eraser className="w-3 h-3 text-rose-500" />
+              <span>Blank Canvas</span>
+            </button>
+            <button
+              onClick={handleLoadStarter}
+              className="flex-1 py-1 px-1.5 bg-blue-50 hover:bg-blue-100 text-[#2F6BFF] rounded-lg font-bold flex items-center justify-center gap-1 border border-blue-200 cursor-pointer"
+              title="Load React Counter starter"
+            >
+              <Sparkle className="w-3 h-3 text-[#2F6BFF]" />
+              <span>React Starter</span>
             </button>
           </div>
 
@@ -715,193 +878,219 @@ Suite: 3 passed, 3 total. Time: 42ms`
           </div>
         </aside>
 
-        {/* ══ PANE 2: CODE EDITOR & LIVE PREVIEW SPLIT ══ */}
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-w-0">
+        {/* ══ PANE 2: RESIZABLE / SHIFTABLE EDITOR & PREVIEW CANVAS ══ */}
+        <div ref={splitContainerRef} className="flex-1 flex overflow-hidden min-w-0 relative">
           
           {/* LEFT SUB-PANE: CODE EDITOR */}
-          <div className="flex-1 flex flex-col bg-[#1E1E1E] text-stone-200 border-r border-stone-800 min-w-0">
-            {/* Open Tab Bar */}
-            <div className="h-9 bg-[#252526] border-b border-[#333333] flex items-center px-2 gap-1 overflow-x-auto shrink-0">
-              {openTabs.map((tabPath) => {
-                const isActive = activeFilePath === tabPath;
-                const tabFileName = tabPath.split("/").pop();
-                return (
-                  <div
-                    key={tabPath}
-                    onClick={() => setActiveFilePath(tabPath)}
-                    className={`px-3 py-1 rounded-t-lg text-xs font-mono flex items-center gap-2 cursor-pointer transition-colors shrink-0 ${
-                      isActive
-                        ? "bg-[#1E1E1E] text-white font-bold border-t-2 border-[#2F6BFF]"
-                        : "text-stone-400 hover:bg-[#2D2D2D]"
-                    }`}
-                  >
-                    <span>{tabFileName}</span>
-                    <button
-                      onClick={(e) => handleCloseTab(tabPath, e)}
-                      className="text-stone-500 hover:text-white p-0.5 rounded"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* JetBrains Mono Code Area */}
-            <div className="flex-1 p-4 font-mono text-xs overflow-y-auto leading-relaxed relative bg-[#1E1E1E]">
-              <textarea
-                value={activeFile?.content || ""}
-                onChange={(e) => handleCodeChange(e.target.value)}
-                spellCheck="false"
-                className="w-full h-full bg-transparent text-[#D4D4D4] outline-none resize-none font-mono text-xs leading-relaxed selection:bg-[#2F6BFF]/30"
-              />
-            </div>
-
-            {/* Bottom Editor Status Bar */}
-            <div className="h-6 bg-[#007ACC] text-white px-3 flex items-center justify-between text-[10px] font-mono shrink-0">
-              <div className="flex items-center gap-3">
-                <span>{activeFile?.name}</span>
-                <span>UTF-8</span>
-                <span>JavaScript / JSX</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span>JetBrains Mono</span>
-                <span>Ln {activeFile?.content?.split("\n").length || 1}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT SUB-PANE: LIVE HOT-RELOADING SANDBOX & DIAGNOSTICS */}
-          <div className="flex-1 flex flex-col bg-white border-r border-stone-200/90 min-w-0">
-            
-            {/* View Switcher Bar */}
-            <div className="h-9 bg-stone-50 border-b border-stone-200 px-3 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-1">
-                {[
-                  { id: "preview", label: "Live Web Sandbox", icon: Browsers },
-                  { id: "diagnostics", label: `Console (${consoleLogs.length})`, icon: WarningCircle },
-                  { id: "terminal", label: "Terminal", icon: TerminalIcon },
-                  { id: "taskboard", label: "Task Board", icon: Kanban }
-                ].map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = bottomTab === tab.id;
+          {(workspaceViewMode === "code" || workspaceViewMode === "split") && (
+            <div
+              style={{
+                width: workspaceViewMode === "split" ? `${splitWidthPercent}%` : "100%"
+              }}
+              className="flex flex-col bg-[#1E1E1E] text-stone-200 border-r border-stone-800 min-w-0 h-full overflow-hidden"
+            >
+              {/* Open Tab Bar */}
+              <div className="h-9 bg-[#252526] border-b border-[#333333] flex items-center px-2 gap-1 overflow-x-auto shrink-0">
+                {openTabs.map((tabPath) => {
+                  const isActive = activeFilePath === tabPath;
+                  const tabFileName = tabPath.split("/").pop();
                   return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setBottomTab(tab.id)}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    <div
+                      key={tabPath}
+                      onClick={() => setActiveFilePath(tabPath)}
+                      className={`px-3 py-1 rounded-t-lg text-xs font-mono flex items-center gap-2 cursor-pointer transition-colors shrink-0 ${
                         isActive
-                          ? "bg-white text-[#2F6BFF] shadow-2xs"
-                          : "text-stone-500 hover:text-stone-900"
+                          ? "bg-[#1E1E1E] text-white font-bold border-t-2 border-[#2F6BFF]"
+                          : "text-stone-400 hover:bg-[#2D2D2D]"
                       }`}
                     >
-                      <Icon className="w-3.5 h-3.5" />
-                      <span>{tab.label}</span>
-                    </button>
+                      <span>{tabFileName}</span>
+                      <button
+                        onClick={(e) => handleCloseTab(tabPath, e)}
+                        className="text-stone-500 hover:text-white p-0.5 rounded"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
                   );
                 })}
               </div>
 
-              <div className="text-[10px] font-mono text-stone-400">
-                localhost:5173/sandbox
+              {/* Code Area */}
+              <div className="flex-1 p-4 font-mono text-xs overflow-y-auto leading-relaxed relative bg-[#1E1E1E]">
+                <textarea
+                  value={activeFile?.content || ""}
+                  onChange={(e) => handleCodeChange(e.target.value)}
+                  spellCheck="false"
+                  className="w-full h-full bg-transparent text-[#D4D4D4] outline-none resize-none font-mono text-xs leading-relaxed selection:bg-[#2F6BFF]/30"
+                />
+              </div>
+
+              {/* Status Bar */}
+              <div className="h-6 bg-[#007ACC] text-white px-3 flex items-center justify-between text-[10px] font-mono shrink-0">
+                <div className="flex items-center gap-3">
+                  <span>{activeFile?.name}</span>
+                  <span>UTF-8</span>
+                  <span>JavaScript / JSX</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span>JetBrains Mono</span>
+                  <span>Ln {activeFile?.content?.split("\n").length || 1}</span>
+                </div>
               </div>
             </div>
+          )}
 
-            {/* 1. LIVE PREVIEW TAB */}
-            {bottomTab === "preview" && (
-              <div className="flex-1 bg-stone-100 p-3 flex items-center justify-center overflow-hidden">
-                <div
-                  className={`h-full bg-white rounded-2xl border border-stone-300 shadow-sm overflow-hidden flex flex-col transition-all duration-300 ${
-                    previewViewport === "mobile"
-                      ? "w-[375px]"
-                      : previewViewport === "tablet"
-                      ? "w-[768px]"
-                      : "w-full"
-                  }`}
-                >
-                  <iframe
-                    key={previewKey}
-                    title="HVRC Live Sandbox Preview"
-                    srcDoc={iframeSrcDoc}
-                    className="w-full h-full border-0 bg-white"
-                    sandbox="allow-scripts allow-same-origin allow-modals"
-                  />
-                </div>
-              </div>
-            )}
+          {/* ══ DRAGGABLE RESIZER DIVIDER BAR (Split View Only) ══ */}
+          {workspaceViewMode === "split" && (
+            <div
+              onMouseDown={handleMouseDownSplit}
+              className={`w-2.5 bg-stone-200 hover:bg-[#2F6BFF] cursor-col-resize flex items-center justify-center transition-colors select-none z-20 ${
+                isDraggingSplit ? "bg-[#2F6BFF]" : ""
+              }`}
+              title="Drag to resize Editor vs Preview"
+            >
+              <div className="w-0.5 h-8 bg-stone-400 rounded-full" />
+            </div>
+          )}
 
-            {/* 2. DIAGNOSTICS & CONSOLE LOGS TAB */}
-            {bottomTab === "diagnostics" && (
-              <div className="flex-1 p-4 bg-stone-900 text-stone-200 font-mono text-xs overflow-y-auto space-y-2">
-                <div className="text-stone-400 text-[11px] border-b border-stone-800 pb-2 flex items-center justify-between">
-                  <span>Sandbox Console Log Stream</span>
-                  <button onClick={() => setConsoleLogs([])} className="hover:text-white cursor-pointer">
-                    Clear
-                  </button>
-                </div>
-                {consoleLogs.length === 0 ? (
-                  <div className="text-stone-500 text-center py-8">No errors or logs captured yet.</div>
-                ) : (
-                  consoleLogs.map((log, idx) => (
-                    <div
-                      key={idx}
-                      className={`p-2 rounded-lg text-xs leading-relaxed flex items-start gap-2 ${
-                        log.type === "error"
-                          ? "bg-rose-950/40 text-rose-300 border border-rose-800/50"
-                          : log.type === "warn"
-                          ? "bg-amber-950/40 text-amber-300 border border-amber-800/50"
-                          : "text-stone-300 bg-stone-800/40"
-                      }`}
-                    >
-                      <span className="text-[10px] text-stone-500 shrink-0">{log.time}</span>
-                      <span className="flex-1">{log.message}</span>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-
-            {/* 3. TERMINAL TAB */}
-            {bottomTab === "terminal" && (
-              <div className="flex-1 p-4 bg-[#0E0F14] text-stone-200 font-mono text-xs flex flex-col justify-between overflow-hidden">
-                <div className="flex-1 overflow-y-auto space-y-1.5 pr-2">
-                  {terminalHistory.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className={`leading-relaxed whitespace-pre-wrap ${
-                        item.type === "input"
-                          ? "text-[#60A5FA] font-bold"
-                          : item.type === "error"
-                          ? "text-rose-400"
-                          : "text-stone-300"
-                      }`}
-                    >
-                      {item.text}
-                    </div>
-                  ))}
+          {/* RIGHT SUB-PANE: LIVE HOT-RELOADING SANDBOX & DIAGNOSTICS */}
+          {(workspaceViewMode === "preview" || workspaceViewMode === "split") && (
+            <div
+              style={{
+                width: workspaceViewMode === "split" ? `${100 - splitWidthPercent}%` : "100%"
+              }}
+              className="flex flex-col bg-white border-r border-stone-200/90 min-w-0 h-full overflow-hidden"
+            >
+              {/* View Switcher Tabs Bar */}
+              <div className="h-9 bg-stone-50 border-b border-stone-200 px-3 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-1">
+                  {[
+                    { id: "preview", label: "Live Web Sandbox", icon: Browsers },
+                    { id: "diagnostics", label: `Console (${consoleLogs.length})`, icon: WarningCircle },
+                    { id: "terminal", label: "Terminal", icon: TerminalIcon },
+                    { id: "taskboard", label: "Task Board", icon: Kanban }
+                  ].map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = bottomTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setBottomTab(tab.id)}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                          isActive
+                            ? "bg-white text-[#2F6BFF] shadow-2xs"
+                            : "text-stone-500 hover:text-stone-900"
+                        }`}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
 
-                <form onSubmit={handleTerminalSubmit} className="pt-2 border-t border-stone-800 flex items-center gap-2">
-                  <span className="text-emerald-400 font-bold">$</span>
-                  <input
-                    type="text"
-                    value={terminalInput}
-                    onChange={(e) => setTerminalInput(e.target.value)}
-                    placeholder="Type 'help', 'ls', 'cat App.jsx', 'build', 'test'..."
-                    className="flex-1 bg-transparent text-white font-mono text-xs outline-none"
-                  />
-                </form>
+                <div className="text-[10px] font-mono text-stone-400 hidden sm:inline">
+                  localhost:5173/sandbox
+                </div>
               </div>
-            )}
 
-            {/* 4. TASK BOARD TAB */}
-            {bottomTab === "taskboard" && (
-              <div className="flex-1 p-4 overflow-y-auto bg-stone-50">
-                <TaskBoard />
-              </div>
-            )}
+              {/* 1. LIVE PREVIEW TAB */}
+              {bottomTab === "preview" && (
+                <div className="flex-1 bg-stone-100 p-3 flex items-center justify-center overflow-hidden">
+                  <div
+                    className={`h-full bg-white rounded-2xl border border-stone-300 shadow-sm overflow-hidden flex flex-col transition-all duration-300 ${
+                      previewViewport === "mobile"
+                        ? "w-[375px]"
+                        : previewViewport === "tablet"
+                        ? "w-[768px]"
+                        : "w-full"
+                    }`}
+                  >
+                    <iframe
+                      key={previewKey}
+                      title="HVRC Live Sandbox Preview"
+                      srcDoc={iframeSrcDoc}
+                      className="w-full h-full border-0 bg-white"
+                      sandbox="allow-scripts allow-same-origin allow-modals"
+                    />
+                  </div>
+                </div>
+              )}
 
-          </div>
+              {/* 2. DIAGNOSTICS & CONSOLE LOGS TAB */}
+              {bottomTab === "diagnostics" && (
+                <div className="flex-1 p-4 bg-stone-900 text-stone-200 font-mono text-xs overflow-y-auto space-y-2">
+                  <div className="text-stone-400 text-[11px] border-b border-stone-800 pb-2 flex items-center justify-between">
+                    <span>Sandbox Console Log Stream</span>
+                    <button onClick={() => setConsoleLogs([])} className="hover:text-white cursor-pointer">
+                      Clear
+                    </button>
+                  </div>
+                  {consoleLogs.length === 0 ? (
+                    <div className="text-stone-500 text-center py-8">No errors or logs captured yet.</div>
+                  ) : (
+                    consoleLogs.map((log, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-2 rounded-lg text-xs leading-relaxed flex items-start gap-2 ${
+                          log.type === "error"
+                            ? "bg-rose-950/40 text-rose-300 border border-rose-800/50"
+                            : log.type === "warn"
+                            ? "bg-amber-950/40 text-amber-300 border border-amber-800/50"
+                            : "text-stone-300 bg-stone-800/40"
+                        }`}
+                      >
+                        <span className="text-[10px] text-stone-500 shrink-0">{log.time}</span>
+                        <span className="flex-1">{log.message}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* 3. TERMINAL TAB */}
+              {bottomTab === "terminal" && (
+                <div className="flex-1 p-4 bg-[#0E0F14] text-stone-200 font-mono text-xs flex flex-col justify-between overflow-hidden">
+                  <div className="flex-1 overflow-y-auto space-y-1.5 pr-2">
+                    {terminalHistory.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className={`leading-relaxed whitespace-pre-wrap ${
+                          item.type === "input"
+                            ? "text-[#60A5FA] font-bold"
+                            : item.type === "error"
+                            ? "text-rose-400"
+                            : "text-stone-300"
+                        }`}
+                      >
+                        {item.text}
+                      </div>
+                    ))}
+                  </div>
+
+                  <form onSubmit={handleTerminalSubmit} className="pt-2 border-t border-stone-800 flex items-center gap-2">
+                    <span className="text-emerald-400 font-bold">$</span>
+                    <input
+                      type="text"
+                      value={terminalInput}
+                      onChange={(e) => setTerminalInput(e.target.value)}
+                      placeholder="Type 'help', 'ls', 'cat App.jsx', 'build', 'test'..."
+                      className="flex-1 bg-transparent text-white font-mono text-xs outline-none"
+                    />
+                  </form>
+                </div>
+              )}
+
+              {/* 4. TASK BOARD TAB */}
+              {bottomTab === "taskboard" && (
+                <div className="flex-1 p-4 overflow-y-auto bg-stone-50">
+                  <TaskBoard />
+                </div>
+              )}
+
+            </div>
+          )}
 
         </div>
 
@@ -915,7 +1104,7 @@ Suite: 3 passed, 3 total. Time: 42ms`
                 <Sparkle weight="fill" className="w-4 h-4 text-[#2F6BFF]" />
                 <span className="font-display font-extrabold text-xs text-stone-900">Multi-Agent Swarm</span>
               </div>
-              <button onClick={() => setIsAiPanelOpen(false)} className="text-stone-400 hover:text-stone-800 p-1">
+              <button onClick={() => setIsAiPanelOpen(false)} className="text-stone-400 hover:text-stone-800 p-1 cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -947,11 +1136,11 @@ Suite: 3 passed, 3 total. Time: 42ms`
 
             {/* Model Selector Bar */}
             <div className="px-3 py-2 border-b border-stone-100 flex items-center justify-between text-[11px] bg-white">
-              <span className="text-stone-400 font-bold">Model Engine:</span>
+              <span className="text-stone-500 font-bold">Designated Engine:</span>
               <select
                 value={selectedChatModelId}
                 onChange={(e) => setSelectedChatModelId(e.target.value)}
-                className="bg-stone-50 border border-stone-200 rounded-lg px-2 py-0.5 text-[11px] font-bold text-stone-800 outline-none max-w-[180px] truncate"
+                className="bg-stone-50 border border-stone-200 rounded-lg px-2 py-0.5 text-[11px] font-bold text-stone-800 outline-none max-w-[180px] truncate cursor-pointer"
               >
                 {(userSelectedModels || availableChatModels || [
                   { id: "meta/llama-3.3-70b-instruct", name: "Llama 3.3 70B (NVIDIA NIM)" }
@@ -971,8 +1160,10 @@ Suite: 3 passed, 3 total. Time: 42ms`
                   className={`flex flex-col space-y-1 ${msg.sender === "user" ? "items-end" : "items-start"}`}
                 >
                   {msg.sender === "ai" && (
-                    <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-stone-500">
+                    <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-stone-500 flex-wrap">
                       <span className="text-blue-600 font-bold">{msg.roleLabel}</span>
+                      <span>•</span>
+                      <span className="font-mono text-stone-600 bg-stone-100 px-1.5 py-0.2 rounded">{msg.modelName || "NVIDIA NIM"}</span>
                       <span>•</span>
                       <span className="font-mono text-stone-400">{msg.timestamp}</span>
                     </div>

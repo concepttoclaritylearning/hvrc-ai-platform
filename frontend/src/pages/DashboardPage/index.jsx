@@ -24,23 +24,34 @@ export default function DashboardPage() {
   const { activeModel } = useModel();
   const navigate = useNavigate();
 
-  // Dynamic user projects state stored in localStorage
-  const [userProjects] = useState(() => {
+  const [userProjects, setUserProjects] = useState(() => {
     const saved = localStorage.getItem("hvrc_user_projects");
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
     }
     return [
       {
         id: "default",
-        name: "Default Workspace Project",
+        name: "Default React Workspace",
         slug: "default",
         updated: "Active Now",
-        desc: "Full-Stack AI Operating System workspace with Monaco editor, live web sandbox, and Multi-Agent Swarm.",
+        desc: "Interactive React IDE sandbox with live web compiler and Multi-Agent Swarms.",
         status: "Active"
       }
     ];
   });
+
+  const handleDeleteProject = (projectId, projectName, e) => {
+    e.stopPropagation();
+    if (confirm(`Delete project "${projectName}"?`)) {
+      const remaining = userProjects.filter((p) => p.id !== projectId);
+      setUserProjects(remaining);
+      localStorage.setItem("hvrc_user_projects", JSON.stringify(remaining));
+    }
+  };
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in font-sans">
@@ -213,7 +224,16 @@ export default function DashboardPage() {
                     <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                       {proj.status || "Active"}
                     </span>
-                    <span className="text-[10px] text-stone-400 font-mono">{proj.updated}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-stone-400 font-mono">{proj.updated}</span>
+                      <button
+                        onClick={(e) => handleDeleteProject(proj.id, proj.name, e)}
+                        className="text-stone-400 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                        title={`Delete "${proj.name}"`}
+                      >
+                        <Trash className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                   <h3 className="font-display font-extrabold text-base text-stone-900">{proj.name}</h3>
                   <p className="text-xs text-stone-500 mt-1.5 line-clamp-2 leading-relaxed">{proj.desc}</p>

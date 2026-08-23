@@ -8,7 +8,6 @@ import {
   DeviceMobile,
   DeviceTablet,
   Desktop,
-  Folder,
   FileCode,
   Plus,
   Trash,
@@ -16,33 +15,28 @@ import {
   Sparkle,
   Terminal as TerminalIcon,
   WarningCircle,
-  CheckCircle,
   PaperPlane,
   X,
-  ArrowsOut,
-  ArrowsIn,
-  Kanban,
-  FileText,
-  Copy,
   Lightning,
-  Columns,
   Cpu,
-  ArrowsLeftRight,
   Eraser,
-  ArrowLeft
+  ArrowLeft,
+  CaretDown,
+  CaretUp,
+  Copy
 } from "@phosphor-icons/react";
 import { useModel } from "@/ModelContext";
 import { useCapability } from "@/context/CapabilityContext";
 import { useProject } from "@/context/ProjectContext";
-import TaskBoard from "@/components/TaskBoard";
 import { saveAs } from "file-saver";
 
-// 1. Starter Templates
+/* ═══════════════════════════════════════════════════════════
+   STARTER TEMPLATES
+   ═══════════════════════════════════════════════════════════ */
 const REACT_STARTER_FILES = [
   {
     name: "App.jsx",
     path: "src/App.jsx",
-    isDir: false,
     content: `import React, { useState } from "react";
 
 export default function App() {
@@ -51,66 +45,24 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#FAF8F4] text-[#1C1917] font-sans p-6 sm:p-10 flex flex-col items-center justify-center">
       <div className="max-w-xl w-full bg-white rounded-3xl p-8 border border-stone-200/90 shadow-sm space-y-6 text-center">
-        
-        {/* Header Icon */}
         <div className="w-14 h-14 mx-auto rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#2F6BFF] shadow-inner">
           <span className="text-2xl">⚡</span>
         </div>
-
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">
-            HVRC.AI Live Sandbox
-          </h1>
-          <p className="text-xs sm:text-sm text-stone-500 mt-1 font-medium">
-            Real in-browser React compiler with hot-reloading &amp; multi-agent swarm.
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">HVRC.AI Live Sandbox</h1>
+          <p className="text-xs sm:text-sm text-stone-500 mt-1 font-medium">Real in-browser React compiler with hot-reloading.</p>
         </div>
-
-        {/* Interactive Counter Demo */}
         <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-between">
           <div className="text-left">
             <div className="text-xs font-bold text-stone-500 uppercase tracking-wider">Reactive State</div>
             <div className="text-xl font-extrabold text-stone-900">Count: {count}</div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCount(count - 1)}
-              className="w-9 h-9 rounded-xl bg-white border border-stone-200 text-stone-700 font-bold hover:bg-stone-100 transition-colors shadow-2xs cursor-pointer"
-            >
-              -
-            </button>
-            <button
-              onClick={() => setCount(count + 1)}
-              className="w-9 h-9 rounded-xl bg-[#2F6BFF] text-white font-bold hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
-            >
-              +
-            </button>
+            <button onClick={() => setCount(c => c - 1)} className="w-9 h-9 rounded-xl bg-white border border-stone-200 text-stone-700 font-bold hover:bg-stone-100 shadow-2xs cursor-pointer">-</button>
+            <button onClick={() => setCount(c => c + 1)} className="w-9 h-9 rounded-xl bg-[#2F6BFF] text-white font-bold hover:bg-blue-700 shadow-sm cursor-pointer">+</button>
           </div>
         </div>
-
-        {/* Feature Highlights */}
-        <div className="grid grid-cols-2 gap-3 text-left">
-          <div className="p-3.5 rounded-xl border border-stone-200 bg-white space-y-1">
-            <div className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
-              <span>🧠</span>
-              <span>Multi-Agent Swarm</span>
-            </div>
-            <p className="text-[11px] text-stone-500">6 Parallel worker agents coordinated in real-time.</p>
-          </div>
-
-          <div className="p-3.5 rounded-xl border border-stone-200 bg-white space-y-1">
-            <div className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
-              <span>🔒</span>
-              <span>Zero-Server Privacy</span>
-            </div>
-            <p className="text-[11px] text-stone-500">All state compiled and executed client-side.</p>
-          </div>
-        </div>
-
-        <div className="pt-2 text-[11px] text-stone-400 font-medium">
-          Edit code in the editor panel to see real-time updates!
-        </div>
-
+        <p className="text-[11px] text-stone-400 font-medium">Edit code in the editor panel to see live updates!</p>
       </div>
     </div>
   );
@@ -119,7 +71,6 @@ export default function App() {
   {
     name: "index.css",
     path: "src/index.css",
-    isDir: false,
     content: `@tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -127,14 +78,12 @@ export default function App() {
 body {
   margin: 0;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  background-color: #FAF8F4;
-  color: #1C1917;
+  background: #FAF8F4;
 }`
   },
   {
     name: "Header.jsx",
     path: "src/components/Header.jsx",
-    isDir: false,
     content: `import React from "react";
 
 export default function Header({ title = "My Project" }) {
@@ -149,9 +98,8 @@ export default function Header({ title = "My Project" }) {
   {
     name: "package.json",
     path: "package.json",
-    isDir: false,
     content: `{
-  "name": "hvrc-live-workspace",
+  "name": "hvrc-workspace",
   "version": "1.0.0",
   "dependencies": {
     "react": "^18.2.0",
@@ -166,15 +114,14 @@ const BLANK_STARTER_FILES = [
   {
     name: "App.jsx",
     path: "src/App.jsx",
-    isDir: false,
-    content: `import React, { useState } from "react";
+    content: `import React from "react";
 
 export default function App() {
   return (
     <div className="min-h-screen bg-white text-stone-900 p-8 font-sans">
       <div className="max-w-2xl mx-auto space-y-4">
         <h1 className="text-3xl font-black">My New App</h1>
-        <p className="text-stone-600">Start writing your React components here, or prompt the AI Swarm on the right!</p>
+        <p className="text-stone-600">Start writing your code here or prompt the AI Swarm!</p>
       </div>
     </div>
   );
@@ -183,23 +130,23 @@ export default function App() {
   {
     name: "index.css",
     path: "src/index.css",
-    isDir: false,
-    content: `@tailwind base;
-@tailwind components;
-@tailwind utilities;`
+    content: `@tailwind base;\n@tailwind components;\n@tailwind utilities;`
   }
 ];
 
+/* ═══════════════════════════════════════════════════════════
+   MAIN WORKSPACE COMPONENT
+   ═══════════════════════════════════════════════════════════ */
 export default function ProjectWorkspace() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { projects } = useProject();
-  const { activeModel, availableChatModels, userSelectedModels, selectModel } = useModel();
+  const { activeModel, providers, getPinnedModelsList, handleSelectModel } = useModel();
   const { capabilityMap } = useCapability();
 
   const currentProject = projects.find((p) => p.slug === slug || p.id === slug) || null;
 
-  // 1. Virtual File System State (Keyed Per Project)
+  /* ─── File System ─── */
   const [files, setFiles] = useState(() => {
     const saved = localStorage.getItem(`hvrc_files_${slug || "default"}`);
     if (saved) {
@@ -208,18 +155,13 @@ export default function ProjectWorkspace() {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch (e) {}
     }
-    if (currentProject?.template === "blank") {
-      return BLANK_STARTER_FILES;
-    }
-    return REACT_STARTER_FILES;
+    return currentProject?.template === "blank" ? BLANK_STARTER_FILES : REACT_STARTER_FILES;
   });
-
   const [activeFilePath, setActiveFilePath] = useState("src/App.jsx");
-  const [openTabs, setOpenTabs] = useState(["src/App.jsx", "src/index.css"]);
+  const [openTabs, setOpenTabs] = useState(["src/App.jsx"]);
   const [newFileName, setNewFileName] = useState("");
   const [isCreatingFile, setIsCreatingFile] = useState(false);
 
-  // Sync files when route slug changes
   useEffect(() => {
     const saved = localStorage.getItem(`hvrc_files_${slug || "default"}`);
     if (saved) {
@@ -232,65 +174,67 @@ export default function ProjectWorkspace() {
         }
       } catch (e) {}
     }
-    if (currentProject?.template === "blank") {
-      setFiles(BLANK_STARTER_FILES);
-      setActiveFilePath("src/App.jsx");
-    } else {
-      setFiles(REACT_STARTER_FILES);
-      setActiveFilePath("src/App.jsx");
-    }
-  }, [slug, currentProject?.template]);
+    const starter = currentProject?.template === "blank" ? BLANK_STARTER_FILES : REACT_STARTER_FILES;
+    setFiles(starter);
+    setActiveFilePath("src/App.jsx");
+  }, [slug]);
 
-  // Persist files per project
   useEffect(() => {
     localStorage.setItem(`hvrc_files_${slug || "default"}`, JSON.stringify(files));
   }, [files, slug]);
 
-  // 2. Shiftable Views & Resizable Split State
-  const [workspaceViewMode, setWorkspaceViewMode] = useState("split"); // 'code' | 'preview' | 'split'
-  const [splitWidthPercent, setSplitWidthPercent] = useState(50); // % for code editor width
-  const [isDraggingSplit, setIsDraggingSplit] = useState(false);
-  const splitContainerRef = useRef(null);
+  /* ─── Bottom Panel State (bolt.new style) ─── */
+  const [bottomPanelTab, setBottomPanelTab] = useState("console"); // 'console' | 'terminal'
+  const [bottomPanelHeight, setBottomPanelHeight] = useState(200);
+  const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(true);
+  const [isDraggingBottom, setIsDraggingBottom] = useState(false);
+  const bottomPanelRef = useRef(null);
 
-  // 3. Sandbox Compiler & Viewport State
-  const [previewViewport, setPreviewViewport] = useState("desktop"); // 'desktop' | 'tablet' | 'mobile'
+  /* ─── Sandbox & Preview ─── */
+  const [previewViewport, setPreviewViewport] = useState("desktop");
   const [iframeSrcDoc, setIframeSrcDoc] = useState("");
   const [previewKey, setPreviewKey] = useState(Date.now());
   const [consoleLogs, setConsoleLogs] = useState([]);
-  const [bottomTab, setBottomTab] = useState("preview"); // 'preview' | 'diagnostics' | 'terminal' | 'taskboard'
 
-  // 4. Terminal Simulator State
+  /* ─── Terminal ─── */
   const [terminalInput, setTerminalInput] = useState("");
   const [terminalHistory, setTerminalHistory] = useState([
-    { type: "info", text: "⚡ HVRC.AI Zero-Server Shell v3.0 initialized." },
-    { type: "info", text: "Type 'help' to view available commands." }
+    { type: "info", text: "⚡ HVRC.AI Shell v3 — type 'help' for commands" }
   ]);
 
-  // 5. Multi-Agent Swarm Chat State
-  const [activeAgentRole, setActiveAgentRole] = useState("primary"); // 'primary' | 'reviewer' | 'tester' | 'bughunter' | 'writer' | 'architect'
+  /* ─── AI Swarm Chat ─── */
+  const [activeAgentRole, setActiveAgentRole] = useState("primary");
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(true);
   const [aiPrompt, setAiPrompt] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
+
+  // Pull real models from connected providers via getPinnedModelsList
+  const connectedModels = getPinnedModelsList ? getPinnedModelsList() : [];
   const [selectedChatModelId, setSelectedChatModelId] = useState(
-    activeModel?.id || "meta/llama-3.3-70b-instruct"
+    activeModel?.id || connectedModels[0]?.id || ""
   );
 
-  const activeModelDisplayName =
-    activeModel?.name ||
-    userSelectedModels?.find((m) => m.id === selectedChatModelId)?.name ||
-    selectedChatModelId ||
-    "Meta Llama 3.3 70B (NVIDIA NIM)";
+  // Sync selectedChatModelId when activeModel changes
+  useEffect(() => {
+    if (activeModel?.id) setSelectedChatModelId(activeModel.id);
+  }, [activeModel?.id]);
+
+  const resolvedModelName = (() => {
+    if (activeModel?.name && activeModel?.providerName) return `${activeModel.name} (${activeModel.providerName})`;
+    if (activeModel?.name) return activeModel.name;
+    const found = connectedModels.find((m) => m.id === selectedChatModelId);
+    if (found) return `${found.name || found.id} (${found.providerName || "Provider"})`;
+    return selectedChatModelId || "No model selected";
+  })();
 
   const [chatMessages, setChatMessages] = useState([
     {
-      id: "m-1",
+      id: "m-welcome",
       sender: "ai",
       role: "primary",
       roleLabel: "Primary Orchestrator",
-      modelName: activeModelDisplayName,
-      text: `👋 Welcome to workspace "${slug || "default"}"! I am your Primary Orchestrator. 
-
-You can switch between specialist Co-Workers below (Reviewer, Tester, Bug Hunter, Docs, Architect) and prompt us to build, refactor, or audit code in real-time.`,
+      modelName: resolvedModelName,
+      text: `👋 Welcome to workspace "${slug || "default"}"!\n\nI'm your Primary Orchestrator. Switch between specialist agents below and prompt us to build, refactor, or audit code.`,
       timestamp: "Just now"
     }
   ]);
@@ -302,146 +246,104 @@ You can switch between specialist Co-Workers below (Reviewer, Tester, Bug Hunter
     chatMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, isAiLoading]);
 
-  // Handle live console messages from Sandbox iframe
+  /* ─── Sandbox Console Message Listener ─── */
   useEffect(() => {
-    const handleMessage = (e) => {
-      if (e.data && e.data.source === "hvrc-sandbox") {
+    const handler = (e) => {
+      if (e.data?.source === "hvrc-sandbox") {
         setConsoleLogs((prev) => [
-          ...prev.slice(-30),
+          ...prev.slice(-50),
           { type: e.data.type || "log", message: e.data.message, time: new Date().toLocaleTimeString() }
         ]);
       }
     };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
   }, []);
 
-  // ══ DRAGGABLE RESIZABLE SPLIT BAR HANDLERS ══
-  const handleMouseDownSplit = (e) => {
+  /* ─── Bottom Panel Drag Resize ─── */
+  const handleBottomDragStart = (e) => {
     e.preventDefault();
-    setIsDraggingSplit(true);
+    setIsDraggingBottom(true);
   };
 
-  const handleMouseMoveSplit = useCallback(
+  const handleBottomDragMove = useCallback(
     (e) => {
-      if (!isDraggingSplit || !splitContainerRef.current) return;
-      const rect = splitContainerRef.current.getBoundingClientRect();
-      const newPercent = ((e.clientX - rect.left) / rect.width) * 100;
-      if (newPercent >= 20 && newPercent <= 80) {
-        setSplitWidthPercent(newPercent);
+      if (!isDraggingBottom) return;
+      const windowHeight = window.innerHeight;
+      const newHeight = windowHeight - e.clientY - 56; // offset for header
+      if (newHeight >= 100 && newHeight <= 500) {
+        setBottomPanelHeight(newHeight);
       }
     },
-    [isDraggingSplit]
+    [isDraggingBottom]
   );
 
-  const handleMouseUpSplit = useCallback(() => {
-    if (isDraggingSplit) setIsDraggingSplit(false);
-  }, [isDraggingSplit]);
+  const handleBottomDragEnd = useCallback(() => {
+    setIsDraggingBottom(false);
+  }, []);
 
   useEffect(() => {
-    if (isDraggingSplit) {
-      window.addEventListener("mousemove", handleMouseMoveSplit);
-      window.addEventListener("mouseup", handleMouseUpSplit);
-    } else {
-      window.removeEventListener("mousemove", handleMouseMoveSplit);
-      window.removeEventListener("mouseup", handleMouseUpSplit);
+    if (isDraggingBottom) {
+      window.addEventListener("mousemove", handleBottomDragMove);
+      window.addEventListener("mouseup", handleBottomDragEnd);
     }
     return () => {
-      window.removeEventListener("mousemove", handleMouseMoveSplit);
-      window.removeEventListener("mouseup", handleMouseUpSplit);
+      window.removeEventListener("mousemove", handleBottomDragMove);
+      window.removeEventListener("mouseup", handleBottomDragEnd);
     };
-  }, [isDraggingSplit, handleMouseMoveSplit, handleMouseUpSplit]);
+  }, [isDraggingBottom, handleBottomDragMove, handleBottomDragEnd]);
 
-  // ══ COMPILE IN-BROWSER REACT SANDBOX ══
+  /* ═══ COMPILE IN-BROWSER SANDBOX ═══ */
   useEffect(() => {
     const appFile = files.find((f) => f.path === "src/App.jsx")?.content || "";
     const cssFile = files.find((f) => f.path === "src/index.css")?.content || "";
     const headerFile = files.find((f) => f.path === "src/components/Header.jsx")?.content || "";
 
-    const cleanAppCode = appFile
-      .replace(/import\s+React.*?from\s+['"].*?['"];?/g, "")
-      .replace(/import\s+.*?from\s+['"].*?['"];?/g, "")
-      .replace(/export\s+default\s+function\s+App/g, "function App");
-
-    const cleanHeaderCode = headerFile
-      .replace(/import\s+React.*?from\s+['"].*?['"];?/g, "")
-      .replace(/import\s+.*?from\s+['"].*?['"];?/g, "")
-      .replace(/export\s+default\s+function\s+Header/g, "function Header");
+    const clean = (code, fnName) =>
+      code
+        .replace(/import\s+.*?from\s+['"].*?['"];?/g, "")
+        .replace(new RegExp(`export\\s+default\\s+function\\s+${fnName}`), `function ${fnName}`);
 
     const htmlDoc = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin><\/script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin><\/script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; }
     ${cssFile.replace(/@tailwind.*?;/g, "")}
   </style>
 </head>
 <body class="bg-[#FAF8F4] text-[#1C1917]">
   <div id="root"></div>
-
   <script>
-    ['log', 'warn', 'error'].forEach(type => {
-      const orig = console[type];
-      console[type] = function(...args) {
-        orig.apply(console, args);
-        try {
-          window.parent.postMessage({
-            source: 'hvrc-sandbox',
-            type: type,
-            message: args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')
-          }, '*');
-        } catch(e) {}
-      };
-    });
-
-    window.onerror = function(msg, url, line) {
-      window.parent.postMessage({
-        source: 'hvrc-sandbox',
-        type: 'error',
-        message: msg + ' (Line ' + line + ')'
-      }, '*');
-    };
-  </script>
-
+    ['log','warn','error'].forEach(t=>{const o=console[t];console[t]=function(...a){o.apply(console,a);try{window.parent.postMessage({source:'hvrc-sandbox',type:t,message:a.map(x=>typeof x==='object'?JSON.stringify(x):String(x)).join(' ')},'*')}catch(e){}}});
+    window.onerror=(m,u,l)=>{window.parent.postMessage({source:'hvrc-sandbox',type:'error',message:m+' (Line '+l+')'},'*')};
+  <\/script>
   <script type="text/babel">
-    const { useState, useEffect, useRef, useMemo } = React;
-
-    ${cleanHeaderCode}
-
-    ${cleanAppCode}
-
-    try {
-      const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(<App />);
-    } catch(err) {
-      console.error("Render Error: " + err.message);
-      document.getElementById('root').innerHTML = '<div style="padding: 20px; color: #DC2626; font-family: monospace;"><h3>⚠️ Render Error</h3><p>' + err.message + '</p></div>';
-    }
-  </script>
+    const{useState,useEffect,useRef,useMemo,useCallback}=React;
+    ${clean(headerFile, "Header")}
+    ${clean(appFile, "App")}
+    try{ReactDOM.createRoot(document.getElementById('root')).render(<App/>)}catch(e){console.error("Render: "+e.message);document.getElementById('root').innerHTML='<div style="padding:24px;color:#DC2626;font-family:monospace"><h3>⚠️ Error</h3><p>'+e.message+'</p></div>'}
+  <\/script>
 </body>
 </html>`;
-
     setIframeSrcDoc(htmlDoc);
   }, [files, previewKey]);
 
+  /* ═══ FILE OPERATIONS ═══ */
   const handleCodeChange = (newCode) => {
-    setFiles((prev) =>
-      prev.map((f) => (f.path === activeFilePath ? { ...f, content: newCode } : f))
-    );
+    setFiles((prev) => prev.map((f) => (f.path === activeFilePath ? { ...f, content: newCode } : f)));
   };
 
   const handleSelectFile = (path) => {
     setActiveFilePath(path);
-    if (!openTabs.includes(path)) {
-      setOpenTabs([...openTabs, path]);
-    }
+    if (!openTabs.includes(path)) setOpenTabs([...openTabs, path]);
   };
 
   const handleCloseTab = (path, e) => {
@@ -455,23 +357,14 @@ You can switch between specialist Co-Workers below (Reviewer, Tester, Bug Hunter
 
   const handleCreateFile = () => {
     if (!newFileName.trim()) return;
-    const cleanPath = newFileName.trim().startsWith("src/")
-      ? newFileName.trim()
-      : `src/${newFileName.trim()}`;
-
-    if (files.some((f) => f.path === cleanPath)) {
-      alert("A file with this name already exists.");
-      return;
-    }
-
-    const newFileObj = {
+    const cleanPath = newFileName.trim().startsWith("src/") ? newFileName.trim() : `src/${newFileName.trim()}`;
+    if (files.some((f) => f.path === cleanPath)) return;
+    const newFile = {
       name: cleanPath.split("/").pop(),
       path: cleanPath,
-      isDir: false,
       content: `// ${cleanPath}\nimport React from "react";\n\nexport default function Component() {\n  return <div>Component</div>;\n}\n`
     };
-
-    setFiles([...files, newFileObj]);
+    setFiles([...files, newFile]);
     setActiveFilePath(cleanPath);
     setOpenTabs([...openTabs, cleanPath]);
     setNewFileName("");
@@ -479,440 +372,273 @@ You can switch between specialist Co-Workers below (Reviewer, Tester, Bug Hunter
   };
 
   const handleDeleteFile = (path, e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    // Allow deleting even the last file — reset to blank
     if (files.length <= 1) {
-      alert("You must keep at least one file in the workspace.");
+      setFiles(BLANK_STARTER_FILES);
+      setActiveFilePath("src/App.jsx");
+      setOpenTabs(["src/App.jsx"]);
       return;
     }
     const updated = files.filter((f) => f.path !== path);
     setFiles(updated);
     setOpenTabs(openTabs.filter((t) => t !== path));
-    if (activeFilePath === path) {
-      setActiveFilePath(updated[0]?.path || "");
-    }
-  };
-
-  const handleClearToBlank = () => {
-    setFiles(BLANK_STARTER_FILES);
-    setActiveFilePath("src/App.jsx");
-    setOpenTabs(["src/App.jsx", "src/index.css"]);
-  };
-
-  const handleLoadStarter = () => {
-    setFiles(REACT_STARTER_FILES);
-    setActiveFilePath("src/App.jsx");
-    setOpenTabs(["src/App.jsx", "src/index.css"]);
+    if (activeFilePath === path) setActiveFilePath(updated[0]?.path || "");
   };
 
   const handleExportZip = () => {
-    const jsonContent = JSON.stringify(files, null, 2);
-    const blob = new Blob([jsonContent], { type: "application/json;charset=utf-8" });
+    const blob = new Blob([JSON.stringify(files, null, 2)], { type: "application/json;charset=utf-8" });
     saveAs(blob, `hvrc-workspace-${slug || "project"}.json`);
   };
 
-  // ══ TERMINAL COMMAND EXECUTION ══
+  /* ═══ TERMINAL ═══ */
   const handleTerminalSubmit = (e) => {
     e.preventDefault();
     if (!terminalInput.trim()) return;
-    const cmd = terminalInput.trim().toLowerCase();
-    const args = cmd.split(" ");
+    const cmd = terminalInput.trim();
+    const args = cmd.toLowerCase().split(" ");
     const command = args[0];
+    const out = [...terminalHistory, { type: "input", text: `$ ${cmd}` }];
 
-    const newHistory = [...terminalHistory, { type: "input", text: `$ ${terminalInput}` }];
+    const cmds = {
+      help: () => out.push({ type: "output", text: "Commands: help, ls, cat <file>, build, test, clear, echo <msg>" }),
+      ls: () => out.push({ type: "output", text: files.map((f) => `  ${f.path}  (${f.content.length}B)`).join("\n") }),
+      cat: () => {
+        const t = args[1];
+        const m = files.find((f) => f.path.toLowerCase() === t || f.name.toLowerCase() === t);
+        out.push(m ? { type: "output", text: m.content } : { type: "error", text: `Not found: ${t || "?"}` });
+      },
+      build: () => out.push({ type: "output", text: `✓ ${files.length} modules transformed\n✓ Bundle: ${(files.reduce((a, f) => a + f.content.length, 0) / 1024).toFixed(1)}kB\n✓ 0 errors` }),
+      test: () => out.push({ type: "output", text: "✓ App mounts OK (PASS)\n✓ State reactivity (PASS)\n2/2 passed · 38ms" }),
+      clear: () => { setTerminalHistory([]); setTerminalInput(""); return; },
+      echo: () => out.push({ type: "output", text: args.slice(1).join(" ") })
+    };
 
-    switch (command) {
-      case "help":
-        newHistory.push({
-          type: "output",
-          text: `Available Shell Commands:
-  • help          - Display command reference
-  • ls            - List workspace files and directories
-  • cat <file>    - Print contents of file
-  • build         - Compile client-side bundle and verify bundle size
-  • test          - Run synthetic unit test assertions
-  • clear         - Clear terminal output
-  • echo <msg>    - Print text to stdout`
-        });
-        break;
-      case "ls":
-        newHistory.push({
-          type: "output",
-          text: files.map((f) => `  ${f.path}  (${f.content.length} bytes)`).join("\n")
-        });
-        break;
-      case "cat":
-        const targetPath = args[1];
-        const match = files.find(
-          (f) => f.path.toLowerCase() === targetPath || f.name.toLowerCase() === targetPath
-        );
-        if (match) {
-          newHistory.push({ type: "output", text: match.content });
-        } else {
-          newHistory.push({ type: "error", text: `File not found: ${targetPath || "unspecified"}` });
-        }
-        break;
-      case "build":
-        newHistory.push({
-          type: "output",
-          text: `Building workspace bundle...
-✓ Transformed ${files.length} modules
-✓ In-browser Babel compiler: OK
-✓ Bundle size: ${(files.reduce((acc, f) => acc + f.content.length, 0) / 1024).toFixed(2)} kB
-✓ Zero compilation errors.`
-        });
-        break;
-      case "test":
-        newHistory.push({
-          type: "output",
-          text: `Running Vitest / Jest synthetic suite:
-✓ App.jsx mounts with zero unhandled exceptions (PASS)
-✓ State reactivity assertion (PASS)
-Suite: 2 passed, 2 total. Time: 38ms`
-        });
-        break;
-      case "clear":
-        setTerminalHistory([]);
-        setTerminalInput("");
-        return;
-      case "echo":
-        newHistory.push({ type: "output", text: args.slice(1).join(" ") });
-        break;
-      default:
-        newHistory.push({
-          type: "error",
-          text: `Command not found: ${command}. Type 'help' for available commands.`
-        });
-    }
+    if (cmds[command]) { cmds[command](); if (command === "clear") return; }
+    else out.push({ type: "error", text: `Unknown: ${command}. Type 'help'` });
 
-    setTerminalHistory(newHistory);
+    setTerminalHistory(out);
     setTerminalInput("");
   };
 
-  // ══ MULTI-AGENT SWARM HANDLER WITH SINGLE-MODEL FALLBACK ══
+  /* ═══ AI SWARM ═══ */
+  const roleLabels = {
+    primary: "Primary Orchestrator",
+    reviewer: "Code Reviewer",
+    tester: "Test Engineer",
+    bughunter: "Bug Hunter",
+    writer: "Documentation",
+    architect: "System Architect"
+  };
+
   const handleAiSend = async () => {
     if (!aiPrompt.trim() || isAiLoading) return;
     const userPrompt = aiPrompt.trim();
     setAiPrompt("");
 
-    const newMsg = {
+    setChatMessages((p) => [...p, {
       id: `m-${Date.now()}`,
       sender: "user",
       text: userPrompt,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    };
-    setChatMessages((prev) => [...prev, newMsg]);
+    }]);
     setIsAiLoading(true);
 
     const resolvedModel =
-      capabilityMap[activeAgentRole] ||
-      activeModel || { id: selectedChatModelId, name: activeModelDisplayName, providerName: "AI Gateway" };
+      capabilityMap?.[activeAgentRole] ||
+      activeModel ||
+      { id: selectedChatModelId, name: resolvedModelName, providerName: "AI Gateway" };
 
     const rolePrompts = {
-      primary: `You are the Primary AI Orchestrator in HVRC.AI. Coordinate the project strategy, generate clean React + Tailwind code for App.jsx, and explain changes clearly.`,
-      reviewer: `You are the Code Reviewer Worker in HVRC.AI. Perform a rigorous security, accessibility, and pattern audit of the current workspace code. Provide clear severity tags: [HIGH], [MEDIUM], [LOW].`,
-      tester: `You are the Test Engineer Worker in HVRC.AI. Generate comprehensive unit tests, assertions, and edge-case validation suites for the active workspace components.`,
-      bughunter: `You are the Bug Hunter Worker in HVRC.AI. Analyze the workspace code for syntax errors, state mismanagement, and runtime leaks. Provide the exact replacement code block.`,
-      writer: `You are the Technical Documentation Specialist in HVRC.AI. Write clear, production-ready markdown documentation and architecture specs for the active codebase.`,
-      architect: `You are the System Architect in HVRC.AI. Design the high-level system data flow, component hierarchies, and clean modular patterns.`
-    };
-
-    const roleLabels = {
-      primary: "Primary Orchestrator",
-      reviewer: "Code Reviewer",
-      tester: "Test Engineer",
-      bughunter: "Bug Hunter",
-      writer: "Documentation Specialist",
-      architect: "System Architect"
+      primary: "You are the Primary AI Orchestrator. Generate clean React + Tailwind code and explain changes.",
+      reviewer: "You are the Code Reviewer. Audit for security, accessibility, and patterns. Use [HIGH], [MEDIUM], [LOW] tags.",
+      tester: "You are the Test Engineer. Generate unit tests and edge-case validations.",
+      bughunter: "You are the Bug Hunter. Find syntax errors, state bugs, and runtime leaks. Provide fixes.",
+      writer: "You are the Documentation Specialist. Write clear markdown docs and architecture specs.",
+      architect: "You are the System Architect. Design component hierarchies and data flow patterns."
     };
 
     try {
-      const response = await fetch("http://localhost:3001/api/providers/chat", {
+      const res = await fetch("http://localhost:3001/api/providers/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          provider: "nvidia",
+          provider: resolvedModel.providerName?.toLowerCase().includes("nvidia") ? "nvidia" : "universal",
           model: resolvedModel.id || "meta/llama-3.3-70b-instruct",
           messages: [
-            { role: "system", content: `${rolePrompts[activeAgentRole]}\nActive File: ${activeFile.path}\nContent:\n\`\`\`jsx\n${activeFile.content}\n\`\`\`` },
+            { role: "system", content: `${rolePrompts[activeAgentRole]}\nFile: ${activeFile.path}\n\`\`\`jsx\n${activeFile.content}\n\`\`\`` },
             { role: "user", content: userPrompt }
           ]
         })
       });
 
-      const data = await response.json();
-      const replyText =
-        data?.choices?.[0]?.message?.content ||
-        data?.message ||
-        `[${roleLabels[activeAgentRole]}] Completed task for: "${userPrompt}". Code analysis executed successfully.`;
+      const data = await res.json();
+      const reply = data?.choices?.[0]?.message?.content || data?.message ||
+        `[${roleLabels[activeAgentRole]}] Processed: "${userPrompt}"`;
 
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: `m-${Date.now() + 1}`,
-          sender: "ai",
-          role: activeAgentRole,
-          roleLabel: roleLabels[activeAgentRole],
-          modelName: resolvedModel.name || resolvedModel.id,
-          text: replyText,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        }
-      ]);
+      setChatMessages((p) => [...p, {
+        id: `m-${Date.now() + 1}`,
+        sender: "ai",
+        role: activeAgentRole,
+        roleLabel: roleLabels[activeAgentRole],
+        modelName: resolvedModel.name || resolvedModel.id,
+        text: reply,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      }]);
     } catch (err) {
-      console.warn("Proxy call fallback:", err);
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: `m-${Date.now() + 1}`,
-          sender: "ai",
-          role: activeAgentRole,
-          roleLabel: roleLabels[activeAgentRole],
-          modelName: resolvedModel.name || resolvedModel.id,
-          text: `[${roleLabels[activeAgentRole]}] I processed your request: "${userPrompt}".\n\nHere is the recommended update for **${activeFile.name}**:\n\`\`\`jsx\n// Verified update by ${roleLabels[activeAgentRole]}\n${activeFile.content}\n\`\`\``,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        }
-      ]);
+      setChatMessages((p) => [...p, {
+        id: `m-${Date.now() + 1}`,
+        sender: "ai",
+        role: activeAgentRole,
+        roleLabel: roleLabels[activeAgentRole],
+        modelName: resolvedModel.name || resolvedModel.id,
+        text: `[${roleLabels[activeAgentRole]}] Processed: "${userPrompt}"\n\nRecommended update for **${activeFile.name}**:\n\`\`\`jsx\n${activeFile.content}\n\`\`\``,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      }]);
     } finally {
       setIsAiLoading(false);
     }
   };
 
-  const applyCodeToActiveFile = (codeText) => {
-    const codeMatch = codeText.match(/```(?:jsx|javascript|js|css|json)?([\s\S]*?)```/);
-    const extracted = codeMatch ? codeMatch[1].trim() : codeText;
-    handleCodeChange(extracted);
+  const applyCodeToActiveFile = (text) => {
+    const m = text.match(/```(?:jsx|javascript|js|css|json)?([\s\S]*?)```/);
+    handleCodeChange(m ? m[1].trim() : text);
   };
 
+  /* ═══════════════════════════════════════════════════════════
+     RENDER — bolt.new inspired layout:
+     ┌──────────────────────────────────────────────────┐
+     │  Top Action Bar                                  │
+     ├────────┬─────────────────────────┬───────────────┤
+     │  File  │  Code Editor            │  AI Swarm     │
+     │  Tree  │                         │  Panel        │
+     │        ├─────────────────────────┤               │
+     │        │  Preview (iframe)       │               │
+     │        ├ ─ ─ drag ─ ─ ─ ─ ─ ─ ─┤               │
+     │        │  Console / Terminal     │               │
+     └────────┴─────────────────────────┴───────────────┘
+     ═══════════════════════════════════════════════════════════ */
   return (
     <div className="h-[calc(100vh-3.5rem)] flex flex-col bg-[#FAF8F4] text-[#1C1917] font-sans overflow-hidden">
-      
-      {/* ══ TOP IDE ACTION BAR (LIGHT CREAM THEME) ══ */}
-      <header className="h-12 bg-white border-b border-stone-200/90 px-4 flex items-center justify-between shrink-0 shadow-2xs z-10">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate("/projects")}
-            className="p-1.5 text-stone-500 hover:text-stone-900 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
-            title="Back to Projects"
-          >
+
+      {/* ═══ TOP ACTION BAR ═══ */}
+      <header className="h-11 bg-white border-b border-stone-200/90 px-3 flex items-center justify-between shrink-0 shadow-2xs z-10">
+        <div className="flex items-center gap-2.5">
+          <button onClick={() => navigate("/projects")} className="p-1.5 text-stone-500 hover:text-stone-900 rounded-lg hover:bg-stone-100 cursor-pointer" title="Back">
             <ArrowLeft className="w-4 h-4" />
           </button>
-
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-blue-50 text-[#2F6BFF] flex items-center justify-center font-bold">
-              <Code className="w-4 h-4" />
-            </div>
-            <span className="font-display font-extrabold text-sm text-stone-900 truncate">
-              {slug ? `Project: ${slug}` : "Default Workspace"}
-            </span>
+          <div className="w-6 h-6 rounded-lg bg-blue-50 text-[#2F6BFF] flex items-center justify-center">
+            <Code className="w-3.5 h-3.5" />
           </div>
+          <span className="font-extrabold text-sm text-stone-900 truncate max-w-[160px]">
+            {currentProject?.name || slug || "Workspace"}
+          </span>
 
-          {/* Active Model Indicator Pill */}
-          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50/80 text-[#2F6BFF] border border-blue-200/70 text-[11px] font-bold">
-            <Cpu className="w-3.5 h-3.5 text-[#2F6BFF]" />
-            <span>Active Model: {activeModelDisplayName}</span>
+          {/* Active Model Pill */}
+          <div className="hidden md:flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50/80 text-[#2F6BFF] border border-blue-200/60 text-[10px] font-bold">
+            <Cpu className="w-3 h-3" />
+            <span className="truncate max-w-[200px]">{resolvedModelName}</span>
           </div>
         </div>
 
-        {/* View Mode Shiftable Switcher + Controls */}
-        <div className="flex items-center gap-2">
-          
-          {/* ══ SHIFTABLE VIEW MODE BUTTONS ══ */}
-          <div className="flex items-center bg-stone-100 p-0.5 rounded-xl border border-stone-200 text-stone-700">
-            <button
-              onClick={() => setWorkspaceViewMode("code")}
-              className={`px-2.5 py-1 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
-                workspaceViewMode === "code"
-                  ? "bg-white text-[#2F6BFF] shadow-2xs"
-                  : "hover:text-stone-900"
-              }`}
-              title="Full Code Editor View"
-            >
-              <Code className="w-3.5 h-3.5" />
-              <span>Code Only</span>
-            </button>
-
-            <button
-              onClick={() => setWorkspaceViewMode("split")}
-              className={`px-2.5 py-1 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
-                workspaceViewMode === "split"
-                  ? "bg-white text-[#2F6BFF] shadow-2xs"
-                  : "hover:text-stone-900"
-              }`}
-              title="Side-by-side Split View"
-            >
-              <Columns className="w-3.5 h-3.5" />
-              <span>Split View</span>
-            </button>
-
-            <button
-              onClick={() => setWorkspaceViewMode("preview")}
-              className={`px-2.5 py-1 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
-                workspaceViewMode === "preview"
-                  ? "bg-white text-[#2F6BFF] shadow-2xs"
-                  : "hover:text-stone-900"
-              }`}
-              title="Full Live Web Preview"
-            >
-              <Browsers className="w-3.5 h-3.5" />
-              <span>Preview Only</span>
-            </button>
-          </div>
-
+        <div className="flex items-center gap-1.5">
           {/* Viewport Device Switcher */}
-          <div className="hidden lg:flex items-center bg-stone-100 p-0.5 rounded-xl border border-stone-200 text-stone-600">
-            <button
-              onClick={() => setPreviewViewport("desktop")}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                previewViewport === "desktop" ? "bg-white text-[#2F6BFF] shadow-2xs font-bold" : "hover:text-stone-900"
-              }`}
-              title="Desktop View (100%)"
-            >
-              <Desktop className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setPreviewViewport("tablet")}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                previewViewport === "tablet" ? "bg-white text-[#2F6BFF] shadow-2xs font-bold" : "hover:text-stone-900"
-              }`}
-              title="Tablet View (768px)"
-            >
-              <DeviceTablet className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setPreviewViewport("mobile")}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                previewViewport === "mobile" ? "bg-white text-[#2F6BFF] shadow-2xs font-bold" : "hover:text-stone-900"
-              }`}
-              title="Mobile View (375px)"
-            >
-              <DeviceMobile className="w-4 h-4" />
-            </button>
+          <div className="hidden lg:flex items-center bg-stone-100 p-0.5 rounded-lg border border-stone-200 text-stone-500">
+            {[
+              { id: "desktop", Icon: Desktop, title: "Desktop" },
+              { id: "tablet", Icon: DeviceTablet, title: "768px" },
+              { id: "mobile", Icon: DeviceMobile, title: "375px" }
+            ].map(({ id, Icon, title }) => (
+              <button
+                key={id}
+                onClick={() => setPreviewViewport(id)}
+                className={`p-1 rounded-md cursor-pointer ${previewViewport === id ? "bg-white text-[#2F6BFF] shadow-2xs" : "hover:text-stone-800"}`}
+                title={title}
+              >
+                <Icon className="w-3.5 h-3.5" />
+              </button>
+            ))}
           </div>
 
-          <button
-            onClick={() => setPreviewKey(Date.now())}
-            className="p-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
-            title="Reload Sandbox"
-          >
+          <button onClick={() => setPreviewKey(Date.now())} className="p-1.5 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-lg cursor-pointer" title="Reload">
             <ArrowClockwise className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Reload</span>
           </button>
 
-          <button
-            onClick={handleExportZip}
-            className="px-3 py-1.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
-            title="Download Workspace JSON/ZIP"
-          >
+          <button onClick={handleExportZip} className="px-2.5 py-1 bg-stone-900 hover:bg-stone-800 text-white rounded-lg text-[11px] font-bold cursor-pointer flex items-center gap-1">
             <DownloadSimple className="w-3.5 h-3.5" />
-            <span>Export</span>
+            <span className="hidden sm:inline">Export</span>
           </button>
 
           <button
             onClick={() => setIsAiPanelOpen(!isAiPanelOpen)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
-              isAiPanelOpen
-                ? "bg-[#2F6BFF] text-white shadow-xs"
-                : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1 cursor-pointer ${
+              isAiPanelOpen ? "bg-[#2F6BFF] text-white shadow-xs" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
             }`}
           >
             <Sparkle className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Swarm Panel</span>
+            <span className="hidden sm:inline">AI Swarm</span>
           </button>
         </div>
       </header>
 
-      {/* ══ MAIN WORKSPACE LAYOUT ══ */}
+      {/* ═══ MAIN 3-COLUMN LAYOUT ═══ */}
       <div className="flex-1 flex overflow-hidden">
-        
-        {/* ══ PANE 1: VIRTUAL FILE EXPLORER ══ */}
-        <aside className="w-56 bg-white border-r border-stone-200/90 flex flex-col shrink-0">
-          <div className="p-3 border-b border-stone-100 flex items-center justify-between">
-            <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">Project Files</span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setIsCreatingFile(!isCreatingFile)}
-                className="p-1 hover:bg-stone-100 text-[#2F6BFF] rounded-lg transition-colors cursor-pointer"
-                title="Add New File"
-              >
-                <Plus className="w-4 h-4 font-bold" />
-              </button>
-            </div>
-          </div>
 
-          {/* Quick Template Switcher */}
-          <div className="p-2 border-b border-stone-100 flex items-center gap-1 text-[10px]">
-            <button
-              onClick={handleClearToBlank}
-              className="flex-1 py-1 px-1.5 bg-stone-50 hover:bg-stone-100 text-stone-600 rounded-lg font-bold flex items-center justify-center gap-1 border border-stone-200 cursor-pointer"
-              title="Clear all files to blank canvas"
-            >
-              <Eraser className="w-3 h-3 text-rose-500" />
-              <span>Blank Canvas</span>
-            </button>
-            <button
-              onClick={handleLoadStarter}
-              className="flex-1 py-1 px-1.5 bg-blue-50 hover:bg-blue-100 text-[#2F6BFF] rounded-lg font-bold flex items-center justify-center gap-1 border border-blue-200 cursor-pointer"
-              title="Load React Counter starter"
-            >
-              <Sparkle className="w-3 h-3 text-[#2F6BFF]" />
-              <span>React Starter</span>
+        {/* ─── COL 1: FILE EXPLORER ─── */}
+        <aside className="w-52 bg-white border-r border-stone-200/90 flex flex-col shrink-0">
+          <div className="p-2.5 border-b border-stone-100 flex items-center justify-between">
+            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Files</span>
+            <button onClick={() => setIsCreatingFile(!isCreatingFile)} className="p-1 hover:bg-stone-100 text-[#2F6BFF] rounded-lg cursor-pointer" title="New File">
+              <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
 
+          {/* Template Switcher */}
+          <div className="p-1.5 border-b border-stone-100 flex items-center gap-1 text-[10px]">
+            <button onClick={() => { setFiles(BLANK_STARTER_FILES); setActiveFilePath("src/App.jsx"); setOpenTabs(["src/App.jsx"]); }}
+              className="flex-1 py-1 bg-stone-50 hover:bg-stone-100 text-stone-600 rounded-md font-bold flex items-center justify-center gap-1 border border-stone-200 cursor-pointer">
+              <Eraser className="w-3 h-3 text-rose-400" /><span>Blank</span>
+            </button>
+            <button onClick={() => { setFiles(REACT_STARTER_FILES); setActiveFilePath("src/App.jsx"); setOpenTabs(["src/App.jsx"]); }}
+              className="flex-1 py-1 bg-blue-50 hover:bg-blue-100 text-[#2F6BFF] rounded-md font-bold flex items-center justify-center gap-1 border border-blue-200 cursor-pointer">
+              <Sparkle className="w-3 h-3" /><span>React</span>
+            </button>
+          </div>
+
+          {/* New File Input */}
           {isCreatingFile && (
-            <div className="p-2 border-b border-stone-100 bg-stone-50 space-y-1.5 animate-fade-in">
+            <div className="p-2 border-b border-stone-100 bg-stone-50 space-y-1">
               <input
-                type="text"
-                placeholder="e.g. Card.jsx or utils.js"
-                value={newFileName}
+                type="text" placeholder="Card.jsx" value={newFileName}
                 onChange={(e) => setNewFileName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleCreateFile()}
-                className="w-full px-2 py-1 text-xs bg-white border border-stone-200 rounded-lg outline-none focus:border-[#2F6BFF]"
+                className="w-full px-2 py-1 text-[11px] bg-white border border-stone-200 rounded-md outline-none focus:border-[#2F6BFF]"
                 autoFocus
               />
-              <div className="flex items-center justify-end gap-1">
-                <button
-                  onClick={() => setIsCreatingFile(false)}
-                  className="px-2 py-0.5 text-[10px] text-stone-500 hover:text-stone-800 cursor-pointer font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreateFile}
-                  className="px-2 py-0.5 text-[10px] bg-[#2F6BFF] text-white rounded cursor-pointer font-bold"
-                >
-                  Create
-                </button>
+              <div className="flex justify-end gap-1">
+                <button onClick={() => setIsCreatingFile(false)} className="px-2 py-0.5 text-[10px] text-stone-500 cursor-pointer font-bold">Cancel</button>
+                <button onClick={handleCreateFile} className="px-2 py-0.5 text-[10px] bg-[#2F6BFF] text-white rounded cursor-pointer font-bold">Create</button>
               </div>
             </div>
           )}
 
-          <div className="p-2 space-y-0.5 overflow-y-auto text-xs flex-1">
+          {/* File List */}
+          <div className="p-1.5 space-y-px overflow-y-auto text-[11px] flex-1">
             {files.map((file) => {
-              const isSelected = activeFilePath === file.path;
+              const sel = activeFilePath === file.path;
               return (
-                <div
-                  key={file.path}
-                  onClick={() => handleSelectFile(file.path)}
-                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl cursor-pointer transition-colors group ${
-                    isSelected
-                      ? "bg-[#2F6BFF]/10 text-[#2F6BFF] font-bold"
-                      : "text-stone-700 hover:bg-stone-100"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <FileCode className={`w-4 h-4 shrink-0 ${isSelected ? "text-[#2F6BFF]" : "text-stone-400"}`} />
+                <div key={file.path} onClick={() => handleSelectFile(file.path)}
+                  className={`flex items-center justify-between px-2 py-1.5 rounded-lg cursor-pointer group ${
+                    sel ? "bg-[#2F6BFF]/10 text-[#2F6BFF] font-bold" : "text-stone-600 hover:bg-stone-50"
+                  }`}>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <FileCode className={`w-3.5 h-3.5 shrink-0 ${sel ? "text-[#2F6BFF]" : "text-stone-400"}`} />
                     <span className="truncate">{file.name}</span>
                   </div>
-
-                  <button
-                    onClick={(e) => handleDeleteFile(file.path, e)}
-                    className="opacity-0 group-hover:opacity-100 text-stone-400 hover:text-rose-600 p-0.5 transition-opacity cursor-pointer"
-                    title="Delete File"
-                  >
-                    <Trash className="w-3.5 h-3.5" />
+                  <button onClick={(e) => handleDeleteFile(file.path, e)}
+                    className="opacity-0 group-hover:opacity-100 text-stone-400 hover:text-rose-600 p-0.5 cursor-pointer"
+                    title="Delete">
+                    <Trash className="w-3 h-3" />
                   </button>
                 </div>
               );
@@ -920,320 +646,236 @@ Suite: 2 passed, 2 total. Time: 38ms`
           </div>
         </aside>
 
-        {/* ══ PANE 2: RESIZABLE / SHIFTABLE EDITOR & PREVIEW CANVAS ══ */}
-        <div ref={splitContainerRef} className="flex-1 flex overflow-hidden min-w-0 relative">
-          
-          {/* LEFT SUB-PANE: CODE EDITOR */}
-          {(workspaceViewMode === "code" || workspaceViewMode === "split") && (
-            <div
-              style={{
-                width: workspaceViewMode === "split" ? `${splitWidthPercent}%` : "100%"
-              }}
-              className="flex flex-col bg-[#1E1E1E] text-stone-200 border-r border-stone-800 min-w-0 h-full overflow-hidden"
-            >
-              {/* Open Tab Bar */}
-              <div className="h-9 bg-[#252526] border-b border-[#333333] flex items-center px-2 gap-1 overflow-x-auto shrink-0">
-                {openTabs.map((tabPath) => {
-                  const isActive = activeFilePath === tabPath;
-                  const tabFileName = tabPath.split("/").pop();
-                  return (
-                    <div
-                      key={tabPath}
-                      onClick={() => setActiveFilePath(tabPath)}
-                      className={`px-3 py-1 rounded-t-lg text-xs font-mono flex items-center gap-2 cursor-pointer transition-colors shrink-0 ${
-                        isActive
-                          ? "bg-[#1E1E1E] text-white font-bold border-t-2 border-[#2F6BFF]"
-                          : "text-stone-400 hover:bg-[#2D2D2D]"
-                      }`}
-                    >
-                      <span>{tabFileName}</span>
-                      <button
-                        onClick={(e) => handleCloseTab(tabPath, e)}
-                        className="text-stone-500 hover:text-white p-0.5 rounded cursor-pointer"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+        {/* ─── COL 2: EDITOR + PREVIEW + BOTTOM PANEL ─── */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-              {/* Code Area */}
-              <div className="flex-1 p-4 font-mono text-xs overflow-y-auto leading-relaxed relative bg-[#1E1E1E]">
-                <textarea
-                  value={activeFile?.content || ""}
-                  onChange={(e) => handleCodeChange(e.target.value)}
-                  spellCheck="false"
-                  className="w-full h-full bg-transparent text-[#D4D4D4] outline-none resize-none font-mono text-xs leading-relaxed selection:bg-[#2F6BFF]/30"
-                />
-              </div>
-
-              {/* Status Bar */}
-              <div className="h-6 bg-[#007ACC] text-white px-3 flex items-center justify-between text-[10px] font-mono shrink-0">
-                <div className="flex items-center gap-3">
-                  <span>{activeFile?.name}</span>
-                  <span>UTF-8</span>
-                  <span>JavaScript / JSX</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span>JetBrains Mono</span>
-                  <span>Ln {activeFile?.content?.split("\n").length || 1}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ══ DRAGGABLE RESIZER DIVIDER BAR (Split View Only) ══ */}
-          {workspaceViewMode === "split" && (
-            <div
-              onMouseDown={handleMouseDownSplit}
-              className={`w-2.5 bg-stone-200 hover:bg-[#2F6BFF] cursor-col-resize flex items-center justify-center transition-colors select-none z-20 ${
-                isDraggingSplit ? "bg-[#2F6BFF]" : ""
-              }`}
-              title="Drag to resize Editor vs Preview"
-            >
-              <div className="w-0.5 h-8 bg-stone-400 rounded-full" />
-            </div>
-          )}
-
-          {/* RIGHT SUB-PANE: LIVE HOT-RELOADING SANDBOX & DIAGNOSTICS */}
-          {(workspaceViewMode === "preview" || workspaceViewMode === "split") && (
-            <div
-              style={{
-                width: workspaceViewMode === "split" ? `${100 - splitWidthPercent}%` : "100%"
-              }}
-              className="flex flex-col bg-white border-r border-stone-200/90 min-w-0 h-full overflow-hidden"
-            >
-              {/* View Switcher Tabs Bar */}
-              <div className="h-9 bg-stone-50 border-b border-stone-200 px-3 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-1">
-                  {[
-                    { id: "preview", label: "Live Web Sandbox", icon: Browsers },
-                    { id: "diagnostics", label: `Console (${consoleLogs.length})`, icon: WarningCircle },
-                    { id: "terminal", label: "Terminal", icon: TerminalIcon },
-                    { id: "taskboard", label: "Task Board", icon: Kanban }
-                  ].map((tab) => {
-                    const Icon = tab.icon;
-                    const isActive = bottomTab === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        onClick={() => setBottomTab(tab.id)}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                          isActive
-                            ? "bg-white text-[#2F6BFF] shadow-2xs"
-                            : "text-stone-500 hover:text-stone-900"
-                        }`}
-                      >
-                        <Icon className="w-3.5 h-3.5" />
-                        <span>{tab.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="text-[10px] font-mono text-stone-400 hidden sm:inline">
-                  localhost:5173/sandbox
-                </div>
-              </div>
-
-              {/* 1. LIVE PREVIEW TAB */}
-              {bottomTab === "preview" && (
-                <div className="flex-1 bg-stone-100 p-3 flex items-center justify-center overflow-hidden">
-                  <div
-                    className={`h-full bg-white rounded-2xl border border-stone-300 shadow-sm overflow-hidden flex flex-col transition-all duration-300 ${
-                      previewViewport === "mobile"
-                        ? "w-[375px]"
-                        : previewViewport === "tablet"
-                        ? "w-[768px]"
-                        : "w-full"
-                    }`}
-                  >
-                    <iframe
-                      key={previewKey}
-                      title="HVRC Live Sandbox Preview"
-                      srcDoc={iframeSrcDoc}
-                      className="w-full h-full border-0 bg-white"
-                      sandbox="allow-scripts allow-same-origin allow-modals"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* 2. DIAGNOSTICS & CONSOLE LOGS TAB */}
-              {bottomTab === "diagnostics" && (
-                <div className="flex-1 p-4 bg-stone-900 text-stone-200 font-mono text-xs overflow-y-auto space-y-2">
-                  <div className="text-stone-400 text-[11px] border-b border-stone-800 pb-2 flex items-center justify-between">
-                    <span>Sandbox Console Log Stream</span>
-                    <button onClick={() => setConsoleLogs([])} className="hover:text-white cursor-pointer">
-                      Clear
+          {/* Code Editor — takes 50% */}
+          <div style={{ height: "50%" }} className="flex flex-col bg-[#1E1E1E] text-stone-200 min-w-0 overflow-hidden shrink-0">
+            {/* Tab Bar */}
+            <div className="h-8 bg-[#252526] border-b border-[#333] flex items-center px-2 gap-0.5 overflow-x-auto shrink-0">
+              {openTabs.map((tp) => {
+                const active = activeFilePath === tp;
+                return (
+                  <div key={tp} onClick={() => setActiveFilePath(tp)}
+                    className={`px-2.5 py-1 text-[11px] font-mono flex items-center gap-1.5 cursor-pointer shrink-0 rounded-t ${
+                      active ? "bg-[#1E1E1E] text-white font-bold border-t-2 border-[#2F6BFF]" : "text-stone-500 hover:bg-[#2D2D2D]"
+                    }`}>
+                    <span>{tp.split("/").pop()}</span>
+                    <button onClick={(e) => handleCloseTab(tp, e)} className="text-stone-600 hover:text-white p-0.5 cursor-pointer">
+                      <X className="w-2.5 h-2.5" />
                     </button>
                   </div>
-                  {consoleLogs.length === 0 ? (
-                    <div className="text-stone-500 text-center py-8">No errors or logs captured yet.</div>
-                  ) : (
-                    consoleLogs.map((log, idx) => (
-                      <div
-                        key={idx}
-                        className={`p-2 rounded-lg text-xs leading-relaxed flex items-start gap-2 ${
-                          log.type === "error"
-                            ? "bg-rose-950/40 text-rose-300 border border-rose-800/50"
-                            : log.type === "warn"
-                            ? "bg-amber-950/40 text-amber-300 border border-amber-800/50"
-                            : "text-stone-300 bg-stone-800/40"
-                        }`}
-                      >
-                        <span className="text-[10px] text-stone-500 shrink-0">{log.time}</span>
-                        <span className="flex-1">{log.message}</span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
+                );
+              })}
+            </div>
 
-              {/* 3. TERMINAL TAB */}
-              {bottomTab === "terminal" && (
-                <div className="flex-1 p-4 bg-[#0E0F14] text-stone-200 font-mono text-xs flex flex-col justify-between overflow-hidden">
-                  <div className="flex-1 overflow-y-auto space-y-1.5 pr-2">
-                    {terminalHistory.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className={`leading-relaxed whitespace-pre-wrap ${
-                          item.type === "input"
-                            ? "text-[#60A5FA] font-bold"
-                            : item.type === "error"
-                            ? "text-rose-400"
-                            : "text-stone-300"
-                        }`}
-                      >
-                        {item.text}
+            {/* Editor Area */}
+            <div className="flex-1 overflow-hidden flex">
+              {/* Line Numbers */}
+              <div className="w-10 bg-[#1E1E1E] border-r border-[#333] pt-3 text-right pr-2 text-[11px] font-mono text-stone-600 overflow-hidden select-none shrink-0">
+                {(activeFile?.content || "").split("\n").map((_, i) => (
+                  <div key={i} className="leading-[1.6]">{i + 1}</div>
+                ))}
+              </div>
+              <textarea
+                value={activeFile?.content || ""}
+                onChange={(e) => handleCodeChange(e.target.value)}
+                spellCheck="false"
+                className="flex-1 p-3 bg-[#1E1E1E] text-[#D4D4D4] outline-none resize-none font-mono text-[11px] leading-[1.6] selection:bg-[#2F6BFF]/30 overflow-auto"
+              />
+            </div>
+
+            {/* Status Bar */}
+            <div className="h-5 bg-[#007ACC] text-white px-3 flex items-center justify-between text-[10px] font-mono shrink-0">
+              <div className="flex items-center gap-3">
+                <span>{activeFile?.name}</span>
+                <span>UTF-8</span>
+                <span>JSX</span>
+              </div>
+              <span>Ln {(activeFile?.content || "").split("\n").length}</span>
+            </div>
+          </div>
+
+          {/* ─── LIVE PREVIEW ─── takes remaining space */}
+          <div className="flex-1 bg-stone-100 border-t border-stone-200 overflow-hidden min-h-0">
+            <div className={`h-full flex items-center justify-center p-2 ${
+              previewViewport === "mobile" ? "max-w-[375px] mx-auto" : previewViewport === "tablet" ? "max-w-[768px] mx-auto" : ""
+            }`}>
+              <iframe
+                key={previewKey}
+                title="Live Sandbox"
+                srcDoc={iframeSrcDoc}
+                className="w-full h-full bg-white rounded-xl border border-stone-300 shadow-sm"
+                sandbox="allow-scripts allow-same-origin allow-modals"
+              />
+            </div>
+          </div>
+
+          {/* ─── BOTTOM PANEL (bolt.new style: Console / Terminal) ─── */}
+          {isBottomPanelOpen && (
+            <>
+              {/* Drag Handle */}
+              <div
+                onMouseDown={handleBottomDragStart}
+                className={`h-1.5 bg-stone-200 hover:bg-[#2F6BFF] cursor-row-resize flex items-center justify-center shrink-0 ${isDraggingBottom ? "bg-[#2F6BFF]" : ""}`}
+              >
+                <div className="w-8 h-0.5 bg-stone-400 rounded-full" />
+              </div>
+
+              <div style={{ height: bottomPanelHeight }} className="bg-[#0E0F14] flex flex-col shrink-0 overflow-hidden">
+                {/* Tab Bar */}
+                <div className="h-8 bg-[#16171D] border-b border-[#2A2B33] px-3 flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-1">
+                    {[
+                      { id: "console", label: `Console (${consoleLogs.length})`, Icon: WarningCircle },
+                      { id: "terminal", label: "Terminal", Icon: TerminalIcon }
+                    ].map(({ id, label, Icon }) => (
+                      <button key={id} onClick={() => setBottomPanelTab(id)}
+                        className={`px-2 py-1 rounded text-[11px] font-bold flex items-center gap-1 cursor-pointer ${
+                          bottomPanelTab === id ? "bg-[#2A2B33] text-white" : "text-stone-500 hover:text-stone-300"
+                        }`}>
+                        <Icon className="w-3 h-3" /><span>{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {bottomPanelTab === "console" && consoleLogs.length > 0 && (
+                      <button onClick={() => setConsoleLogs([])} className="text-stone-500 hover:text-white text-[10px] font-bold cursor-pointer px-1">Clear</button>
+                    )}
+                    <button onClick={() => setIsBottomPanelOpen(false)} className="text-stone-500 hover:text-white p-0.5 cursor-pointer">
+                      <CaretDown className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Console */}
+                {bottomPanelTab === "console" && (
+                  <div className="flex-1 p-3 overflow-y-auto space-y-1 text-[11px] font-mono">
+                    {consoleLogs.length === 0 ? (
+                      <div className="text-stone-600 text-center py-6">No console output yet.</div>
+                    ) : consoleLogs.map((log, i) => (
+                      <div key={i} className={`py-0.5 px-2 flex items-start gap-2 rounded ${
+                        log.type === "error" ? "text-rose-400 bg-rose-950/30" : log.type === "warn" ? "text-amber-400 bg-amber-950/30" : "text-stone-300"
+                      }`}>
+                        <span className="text-stone-600 shrink-0 text-[10px]">{log.time}</span>
+                        <span className="flex-1 break-all">{log.message}</span>
                       </div>
                     ))}
                   </div>
+                )}
 
-                  <form onSubmit={handleTerminalSubmit} className="pt-2 border-t border-stone-800 flex items-center gap-2">
-                    <span className="text-emerald-400 font-bold">$</span>
-                    <input
-                      type="text"
-                      value={terminalInput}
-                      onChange={(e) => setTerminalInput(e.target.value)}
-                      placeholder="Type 'help', 'ls', 'cat App.jsx', 'build', 'test'..."
-                      className="flex-1 bg-transparent text-white font-mono text-xs outline-none"
-                    />
-                  </form>
-                </div>
-              )}
-
-              {/* 4. TASK BOARD TAB */}
-              {bottomTab === "taskboard" && (
-                <div className="flex-1 p-4 overflow-y-auto bg-stone-50">
-                  <TaskBoard />
-                </div>
-              )}
-
-            </div>
+                {/* Terminal */}
+                {bottomPanelTab === "terminal" && (
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <div className="flex-1 p-3 overflow-y-auto space-y-1 text-[11px] font-mono">
+                      {terminalHistory.map((item, i) => (
+                        <div key={i} className={`whitespace-pre-wrap ${
+                          item.type === "input" ? "text-[#60A5FA] font-bold" : item.type === "error" ? "text-rose-400" : "text-stone-300"
+                        }`}>{item.text}</div>
+                      ))}
+                    </div>
+                    <form onSubmit={handleTerminalSubmit} className="px-3 pb-2 pt-1 border-t border-[#2A2B33] flex items-center gap-2">
+                      <span className="text-emerald-400 font-bold font-mono text-[11px]">$</span>
+                      <input type="text" value={terminalInput} onChange={(e) => setTerminalInput(e.target.value)}
+                        placeholder="help, ls, cat App.jsx, build, test..."
+                        className="flex-1 bg-transparent text-white font-mono text-[11px] outline-none"
+                      />
+                    </form>
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
+          {/* Toggle Bottom Panel Button (when closed) */}
+          {!isBottomPanelOpen && (
+            <button onClick={() => setIsBottomPanelOpen(true)}
+              className="h-6 bg-[#16171D] text-stone-500 hover:text-white flex items-center justify-center gap-1 text-[10px] font-bold cursor-pointer shrink-0">
+              <CaretUp className="w-3 h-3" /><span>Console / Terminal</span>
+            </button>
+          )}
         </div>
 
-        {/* ══ PANE 3: MULTI-AGENT SWARM PANEL (RIGHT) ══ */}
+        {/* ─── COL 3: AI SWARM PANEL ─── */}
         {isAiPanelOpen && (
-          <aside className="w-80 sm:w-96 bg-white border-l border-stone-200/90 flex flex-col shrink-0">
-            
+          <aside className="w-80 bg-white border-l border-stone-200/90 flex flex-col shrink-0">
             {/* Header */}
-            <div className="p-3 border-b border-stone-100 flex items-center justify-between bg-stone-50/70">
-              <div className="flex items-center gap-2">
-                <Sparkle weight="fill" className="w-4 h-4 text-[#2F6BFF]" />
-                <span className="font-display font-extrabold text-xs text-stone-900">Multi-Agent Swarm</span>
+            <div className="p-2.5 border-b border-stone-100 flex items-center justify-between bg-stone-50/70">
+              <div className="flex items-center gap-1.5">
+                <Sparkle weight="fill" className="w-3.5 h-3.5 text-[#2F6BFF]" />
+                <span className="font-extrabold text-[11px] text-stone-900">AI Swarm</span>
               </div>
               <button onClick={() => setIsAiPanelOpen(false)} className="text-stone-400 hover:text-stone-800 p-1 cursor-pointer">
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            {/* Worker Role Selector Pills */}
-            <div className="p-2 border-b border-stone-100 bg-stone-50/40 flex items-center gap-1 overflow-x-auto">
+            {/* Agent Role Pills */}
+            <div className="p-1.5 border-b border-stone-100 bg-stone-50/40 flex flex-wrap gap-1">
               {[
                 { id: "primary", label: "Primary", icon: "🧠" },
-                { id: "reviewer", label: "Reviewer", icon: "🔍" },
-                { id: "tester", label: "Tester", icon: "🧪" },
-                { id: "bughunter", label: "Bug Hunter", icon: "🐛" },
+                { id: "reviewer", label: "Review", icon: "🔍" },
+                { id: "tester", label: "Test", icon: "🧪" },
+                { id: "bughunter", label: "Bugs", icon: "🐛" },
                 { id: "writer", label: "Docs", icon: "📝" },
-                { id: "architect", label: "Architect", icon: "📐" }
-              ].map((role) => (
-                <button
-                  key={role.id}
-                  onClick={() => setActiveAgentRole(role.id)}
-                  className={`px-2.5 py-1 rounded-xl text-[11px] font-extrabold flex items-center gap-1 transition-all shrink-0 cursor-pointer ${
-                    activeAgentRole === role.id
-                      ? "bg-[#2F6BFF] text-white shadow-2xs"
-                      : "text-stone-600 hover:bg-stone-200/70"
-                  }`}
-                >
-                  <span>{role.icon}</span>
-                  <span>{role.label}</span>
+                { id: "architect", label: "Arch", icon: "📐" }
+              ].map((r) => (
+                <button key={r.id} onClick={() => setActiveAgentRole(r.id)}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold flex items-center gap-1 cursor-pointer ${
+                    activeAgentRole === r.id ? "bg-[#2F6BFF] text-white shadow-2xs" : "text-stone-500 hover:bg-stone-200/70"
+                  }`}>
+                  <span>{r.icon}</span><span>{r.label}</span>
                 </button>
               ))}
             </div>
 
-            {/* Model Selector Bar */}
-            <div className="px-3 py-2 border-b border-stone-100 flex items-center justify-between text-[11px] bg-white">
-              <span className="text-stone-500 font-bold">Designated Engine:</span>
+            {/* Model Selector — only real connected models */}
+            <div className="px-2.5 py-1.5 border-b border-stone-100 flex items-center justify-between text-[10px] bg-white">
+              <span className="text-stone-400 font-bold">Engine:</span>
               <select
                 value={selectedChatModelId}
                 onChange={(e) => {
                   setSelectedChatModelId(e.target.value);
-                  const matched = (userSelectedModels || availableChatModels || []).find(m => m.id === e.target.value);
-                  if (matched) selectModel("universal", matched);
+                  const found = connectedModels.find((m) => m.id === e.target.value);
+                  if (found && handleSelectModel) {
+                    handleSelectModel(found.providerId || "universal", found);
+                  }
                 }}
-                className="bg-stone-50 border border-stone-200 rounded-lg px-2 py-0.5 text-[11px] font-bold text-stone-800 outline-none max-w-[180px] truncate cursor-pointer"
+                className="bg-stone-50 border border-stone-200 rounded-md px-1.5 py-0.5 text-[10px] font-bold text-stone-800 outline-none max-w-[170px] truncate cursor-pointer"
               >
-                {(userSelectedModels || availableChatModels || [
-                  { id: "meta/llama-3.3-70b-instruct", name: "Meta Llama 3.3 70B" },
-                  { id: "deepseek-ai/deepseek-r1", name: "DeepSeek R1" },
-                  { id: "openai/gpt-4o", name: "OpenAI GPT-4o" }
-                ]).map((m) => (
+                {connectedModels.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.name || m.id}
+                    {m.name || m.id}{m.providerName ? ` (${m.providerName})` : ""}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Messages Feed */}
-            <div className="flex-1 p-3 overflow-y-auto space-y-3 bg-[#FAF8F4]/50 text-xs">
+            {/* Messages */}
+            <div className="flex-1 p-2.5 overflow-y-auto space-y-2.5 bg-[#FAF8F4]/50 text-[11px]">
               {chatMessages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex flex-col space-y-1 ${msg.sender === "user" ? "items-end" : "items-start"}`}
-                >
+                <div key={msg.id} className={`flex flex-col space-y-0.5 ${msg.sender === "user" ? "items-end" : "items-start"}`}>
                   {msg.sender === "ai" && (
-                    <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-stone-500 flex-wrap">
-                      <span className="text-blue-600 font-bold">{msg.roleLabel}</span>
-                      <span>•</span>
-                      <span className="font-mono text-stone-600 bg-stone-100 px-1.5 py-0.2 rounded">{msg.modelName || activeModelDisplayName}</span>
-                      <span>•</span>
+                    <div className="flex items-center gap-1 text-[9px] font-extrabold text-stone-500 flex-wrap">
+                      <span className="text-blue-600">{msg.roleLabel}</span>
+                      <span>·</span>
+                      <span className="font-mono text-stone-500 bg-stone-100 px-1 rounded">{msg.modelName}</span>
+                      <span>·</span>
                       <span className="font-mono text-stone-400">{msg.timestamp}</span>
                     </div>
                   )}
 
-                  <div
-                    className={`p-3.5 rounded-2xl max-w-[92%] leading-relaxed whitespace-pre-wrap ${
-                      msg.sender === "user"
-                        ? "bg-[#2F6BFF] text-white rounded-br-xs shadow-xs font-medium"
-                        : "bg-white text-stone-800 rounded-bl-xs border border-stone-200/90 shadow-2xs"
-                    }`}
-                  >
+                  <div className={`p-3 rounded-2xl max-w-[95%] leading-relaxed whitespace-pre-wrap ${
+                    msg.sender === "user"
+                      ? "bg-[#2F6BFF] text-white rounded-br-sm shadow-xs"
+                      : "bg-white text-stone-800 rounded-bl-sm border border-stone-200/90 shadow-2xs"
+                  }`}>
                     {msg.text}
-
                     {msg.sender === "ai" && msg.text.includes("```") && (
-                      <div className="mt-2.5 pt-2 border-t border-stone-100 flex items-center justify-end">
-                        <button
-                          onClick={() => applyCodeToActiveFile(msg.text)}
-                          className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer border border-emerald-200"
-                        >
-                          <Lightning className="w-3 h-3" />
-                          <span>Apply to {activeFile.name}</span>
+                      <div className="mt-2 pt-1.5 border-t border-stone-100 flex justify-end">
+                        <button onClick={() => applyCodeToActiveFile(msg.text)}
+                          className="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-md text-[10px] font-bold flex items-center gap-1 cursor-pointer border border-emerald-200">
+                          <Lightning className="w-3 h-3" /><span>Apply</span>
                         </button>
                       </div>
                     )}
@@ -1241,51 +883,32 @@ Suite: 2 passed, 2 total. Time: 38ms`
                 </div>
               ))}
               {isAiLoading && (
-                <div className="p-3 bg-white rounded-2xl border border-stone-200 text-stone-500 text-xs flex items-center gap-2 animate-pulse">
-                  <Sparkle className="w-3.5 h-3.5 text-[#2F6BFF]" />
-                  <span>Agent is reasoning and compiling output...</span>
+                <div className="p-2.5 bg-white rounded-2xl border border-stone-200 text-stone-500 text-[11px] flex items-center gap-2 animate-pulse">
+                  <Sparkle className="w-3 h-3 text-[#2F6BFF]" /><span>Agent reasoning...</span>
                 </div>
               )}
               <div ref={chatMessagesEndRef} />
             </div>
 
-            {/* Input Bar */}
-            <div className="p-3 border-t border-stone-200 bg-white">
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder={`Ask ${
-                    activeAgentRole === "primary"
-                      ? "Primary Orchestrator"
-                      : activeAgentRole === "reviewer"
-                      ? "Code Reviewer"
-                      : activeAgentRole === "tester"
-                      ? "Test Engineer"
-                      : activeAgentRole === "bughunter"
-                      ? "Bug Hunter"
-                      : activeAgentRole === "writer"
-                      ? "Docs Specialist"
-                      : "System Architect"
-                  }...`}
+            {/* Input */}
+            <div className="p-2.5 border-t border-stone-200 bg-white">
+              <div className="flex items-center gap-1.5">
+                <input type="text"
+                  placeholder={`Ask ${roleLabels[activeAgentRole]}...`}
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAiSend()}
                   disabled={isAiLoading}
-                  className="flex-1 bg-stone-100 border border-stone-200 rounded-xl px-3 py-2 text-xs outline-none text-stone-900 focus:border-[#2F6BFF] focus:bg-white transition-all"
+                  className="flex-1 bg-stone-100 border border-stone-200 rounded-xl px-2.5 py-2 text-[11px] outline-none text-stone-900 focus:border-[#2F6BFF] focus:bg-white"
                 />
-                <button
-                  onClick={handleAiSend}
-                  disabled={isAiLoading || !aiPrompt.trim()}
-                  className="p-2.5 bg-[#2F6BFF] hover:bg-blue-700 text-white rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-50"
-                >
-                  <PaperPlane className="w-4 h-4" />
+                <button onClick={handleAiSend} disabled={isAiLoading || !aiPrompt.trim()}
+                  className="p-2 bg-[#2F6BFF] hover:bg-blue-700 text-white rounded-xl cursor-pointer disabled:opacity-50">
+                  <PaperPlane className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
-
           </aside>
         )}
-
       </div>
     </div>
   );

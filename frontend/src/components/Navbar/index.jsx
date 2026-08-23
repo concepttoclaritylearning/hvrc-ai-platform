@@ -26,8 +26,8 @@ export default function Navbar({ onOpenSearch, projects = [], activeProject, onS
   const {
     activeModel,
     selectModel,
-    availableChatModels,
-    userSelectedModels,
+    getPinnedModelsList,
+    handleSelectModel,
     providers
   } = useModel();
 
@@ -55,20 +55,8 @@ export default function Navbar({ onOpenSearch, projects = [], activeProject, onS
     window.location.href = "/landing";
   };
 
-  // Combine discovered chat models with safety fallback
-  const allModelsList =
-    userSelectedModels?.length > 0
-      ? userSelectedModels
-      : availableChatModels?.length > 0
-      ? availableChatModels
-      : [
-          { id: "meta/llama-3.3-70b-instruct", name: "Meta Llama 3.3 70B", provider: "NVIDIA NIM" },
-          { id: "deepseek-ai/deepseek-r1", name: "DeepSeek R1", provider: "NVIDIA NIM" },
-          { id: "qwen/qwen2.5-72b-instruct", name: "Qwen 2.5 72B", provider: "NVIDIA NIM" },
-          { id: "openai/gpt-4o", name: "OpenAI GPT-4o", provider: "OpenAI" },
-          { id: "anthropic/claude-3.5-sonnet", name: "Claude 3.5 Sonnet", provider: "Anthropic" },
-          { id: "mistralai/mistral-large-2407", name: "Mistral Large", provider: "Mistral" }
-        ];
+  // Pull real connected models from providers
+  const allModelsList = getPinnedModelsList ? getPinnedModelsList() : [];
 
   const filteredModels = allModelsList.filter(
     (m) =>
@@ -191,11 +179,13 @@ export default function Navbar({ onOpenSearch, projects = [], activeProject, onS
           >
             <Sparkle weight="fill" className="w-3.5 h-3.5 text-[#2F6BFF]" />
             <span className="truncate max-w-[130px] lg:max-w-[190px]">
-              {activeModel?.name || "Meta Llama 3.3 70B"}
+              {activeModel?.name || activeModel?.id || "Select Model"}
             </span>
-            <span className="text-[10px] px-1.5 py-0.2 bg-[#2F6BFF] text-white rounded-md font-extrabold hidden lg:inline">
-              Free NIM
-            </span>
+            {activeModel?.providerName && (
+              <span className="text-[10px] px-1.5 py-0.2 bg-[#2F6BFF] text-white rounded-md font-extrabold hidden lg:inline">
+                {activeModel.providerName}
+              </span>
+            )}
             <CaretDown className="w-3 h-3 text-stone-400" />
           </button>
 
@@ -232,7 +222,7 @@ export default function Navbar({ onOpenSearch, projects = [], activeProject, onS
                     <button
                       key={m.id}
                       onClick={() => {
-                        selectModel(pId, m);
+                        handleSelectModel(pId, m);
                         setShowModelDropdown(false);
                       }}
                       className={`w-full text-left px-3 py-2 rounded-xl hover:bg-stone-50 flex items-center justify-between text-xs transition-colors cursor-pointer ${

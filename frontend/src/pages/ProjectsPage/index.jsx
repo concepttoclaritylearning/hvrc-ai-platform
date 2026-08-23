@@ -103,13 +103,13 @@ export default function ProjectsPage() {
   };
 
   const handleDeleteProject = (projectId, projectName, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (confirm(`Are you sure you want to delete "${projectName}"? This will remove all local files and conversations for this project.`)) {
-      const remaining = projects.filter((p) => p.id !== projectId);
-      setProjects(remaining);
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
+    const remaining = projects.filter((p) => p.id !== projectId);
+    setProjects(remaining);
+    localStorage.setItem("hvrc_user_projects", JSON.stringify(remaining));
   };
 
   const handleResetToDefaults = () => {

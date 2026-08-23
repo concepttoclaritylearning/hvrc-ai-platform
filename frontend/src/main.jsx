@@ -68,14 +68,6 @@ const router = createBrowserRouter([
             element: <ModelHubPage />,
           },
           {
-            path: "knowledge",
-            element: <KnowledgePage />,
-          },
-          {
-            path: "prompts",
-            element: <PromptsPage />,
-          },
-          {
             path: "history",
             element: <HistoryPage />,
           },

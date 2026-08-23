@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   MagnifyingGlass,
@@ -11,38 +11,81 @@ import {
   SignOut,
   Lightning,
   Check,
-  Star
+  HardDrive,
+  Cpu,
+  CheckCircle,
+  CloudCheck
 } from "@phosphor-icons/react";
 import useUser from "@/hooks/useUser";
 import { useModel } from "@/ModelContext";
+import { signOutUser } from "@/utils/supabase";
 
 export default function Navbar({ onOpenSearch, projects = [], activeProject, onSelectProject }) {
   const { user } = useUser();
   const navigate = useNavigate();
-  const { activeModel, selectModel, providers, modelsMap, getPinnedModelsList } = useModel();
+  const {
+    activeModel,
+    selectModel,
+    availableChatModels,
+    userSelectedModels,
+    providers
+  } = useModel();
 
   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [modelSearchQuery, setModelSearchQuery] = useState("");
+  const [driveConnected, setDriveConnected] = useState(() => {
+    return localStorage.getItem("hvrc_drive_connected") !== "false";
+  });
 
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [unreadNotifications, setUnreadNotifications] = useState([
-    { id: 1, title: "System Ready", time: "Just now", desc: "HVRC.AI Zero-Server Gateway is connected and active.", unread: true },
-    { id: 2, title: "Cloud Backup", time: "10 mins ago", desc: "Google Drive auto-sync is healthy and up-to-date.", unread: true },
-    { id: 3, title: "BYOK Providers", time: "1 hour ago", desc: "Model discovery updated across OpenRouter, NVIDIA, and Groq.", unread: false }
-  ]);
+  const toggleDriveSync = () => {
+    const next = !driveConnected;
+    setDriveConnected(next);
+    localStorage.setItem("hvrc_drive_connected", String(next));
+  };
 
-  const pinnedModels = getPinnedModelsList();
+  const handleLogout = async () => {
+    try {
+      await signOutUser();
+    } catch (e) {
+      console.warn("Sign out notice:", e);
+    }
+    localStorage.removeItem("hvrc_dev_session");
+    window.location.href = "/landing";
+  };
+
+  // Combine discovered chat models with safety fallback
+  const allModelsList =
+    userSelectedModels?.length > 0
+      ? userSelectedModels
+      : availableChatModels?.length > 0
+      ? availableChatModels
+      : [
+          { id: "meta/llama-3.3-70b-instruct", name: "Meta Llama 3.3 70B", provider: "NVIDIA NIM" },
+          { id: "deepseek-ai/deepseek-r1", name: "DeepSeek R1", provider: "NVIDIA NIM" },
+          { id: "qwen/qwen2.5-72b-instruct", name: "Qwen 2.5 72B", provider: "NVIDIA NIM" },
+          { id: "openai/gpt-4o", name: "OpenAI GPT-4o", provider: "OpenAI" },
+          { id: "anthropic/claude-3.5-sonnet", name: "Claude 3.5 Sonnet", provider: "Anthropic" },
+          { id: "mistralai/mistral-large-2407", name: "Mistral Large", provider: "Mistral" }
+        ];
+
+  const filteredModels = allModelsList.filter(
+    (m) =>
+      m.name?.toLowerCase().includes(modelSearchQuery.toLowerCase()) ||
+      m.id?.toLowerCase().includes(modelSearchQuery.toLowerCase())
+  );
 
   return (
-    <header className="h-14 bg-white border-b border-stone-200/80 px-4 flex items-center justify-between z-30 sticky top-0 shadow-sm font-sans">
-      {/* Left: Brand & Project Selector */}
+    <header className="h-14 bg-white border-b border-stone-200/90 px-4 flex items-center justify-between z-30 sticky top-0 shadow-2xs font-sans text-[#1C1917]">
+      
+      {/* ══ LEFT: BRAND & PROJECT SELECTOR ══ */}
       <div className="flex items-center gap-3">
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-xl bg-[#2F6BFF] flex items-center justify-center text-white font-bold shadow-sm shadow-[#2F6BFF]/20 group-hover:scale-105 transition-transform">
+          <div className="w-8 h-8 rounded-xl bg-[#2F6BFF] flex items-center justify-center text-white font-bold shadow-md shadow-[#2F6BFF]/20 group-hover:scale-105 transition-transform">
             <Lightning weight="fill" className="w-4 h-4 text-white" />
           </div>
-          <span className="font-extrabold text-lg tracking-tight text-stone-900">
+          <span className="font-display font-black text-lg tracking-tight text-stone-900">
             HVRC<span className="text-[#2F6BFF]">.AI</span>
           </span>
         </Link>
@@ -53,7 +96,7 @@ export default function Navbar({ onOpenSearch, projects = [], activeProject, onS
         <div className="relative">
           <button
             onClick={() => setShowProjectDropdown(!showProjectDropdown)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium text-stone-700 bg-stone-100/80 hover:bg-stone-200/70 border border-stone-200/60 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold text-stone-800 bg-stone-100/90 hover:bg-stone-200/80 border border-stone-200/80 transition-colors cursor-pointer"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span className="max-w-[140px] truncate">{activeProject?.name || "Default Project"}</span>
@@ -62,11 +105,11 @@ export default function Navbar({ onOpenSearch, projects = [], activeProject, onS
 
           {showProjectDropdown && (
             <div
-              className="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-stone-200/80 py-2 z-50 animate-fade-in"
+              className="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-stone-200/90 py-2 z-50 animate-fade-in"
               onMouseLeave={() => setShowProjectDropdown(false)}
             >
-              <div className="px-3 py-1.5 text-[10px] font-semibold text-stone-400 uppercase tracking-wider">
-                Select Project
+              <div className="px-3 py-1.5 text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                Select Active Project
               </div>
               <div className="max-h-56 overflow-y-auto">
                 {projects.length > 0 ? (
@@ -76,13 +119,13 @@ export default function Navbar({ onOpenSearch, projects = [], activeProject, onS
                       onClick={() => {
                         onSelectProject && onSelectProject(p);
                         setShowProjectDropdown(false);
-                        navigate(`/project/${p.slug || p.id}`);
+                        navigate(`/project/${p.slug || p.id}/workspace`);
                       }}
-                      className="w-full text-left px-3 py-2 text-xs font-medium text-stone-700 hover:bg-stone-50 flex items-center justify-between"
+                      className="w-full text-left px-3 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 flex items-center justify-between cursor-pointer"
                     >
                       <span className="truncate">{p.name}</span>
                       {activeProject?.slug === p.slug && (
-                        <span className="text-[10px] font-semibold text-[#2F6BFF] bg-[#2F6BFF]/10 px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] font-bold text-[#2F6BFF] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
                           Active
                         </span>
                       )}
@@ -98,10 +141,10 @@ export default function Navbar({ onOpenSearch, projects = [], activeProject, onS
                     setShowProjectDropdown(false);
                     navigate("/projects");
                   }}
-                  className="w-full text-left px-2 py-1.5 text-xs font-medium text-[#2F6BFF] hover:bg-blue-50/60 rounded-lg flex items-center gap-1.5"
+                  className="w-full text-left px-2 py-1.5 text-xs font-bold text-[#2F6BFF] hover:bg-blue-50 rounded-lg flex items-center gap-1.5 cursor-pointer"
                 >
                   <FolderPlus className="w-4 h-4" />
-                  <span>Create / Manage Projects</span>
+                  <span>+ Create / Manage Projects</span>
                 </button>
               </div>
             </div>
@@ -109,197 +152,150 @@ export default function Navbar({ onOpenSearch, projects = [], activeProject, onS
         </div>
       </div>
 
-      {/* Middle: Global Search Trigger */}
+      {/* ══ MIDDLE: GLOBAL SEARCH TRIGGER ══ */}
       <button
         onClick={onOpenSearch}
-        className="hidden md:flex items-center gap-3 px-3 py-1.5 bg-stone-100/70 hover:bg-stone-200/70 border border-stone-200/80 rounded-xl text-xs text-stone-500 min-w-[280px] justify-between transition-colors shadow-inner"
+        className="hidden md:flex items-center gap-3 px-3 py-1.5 bg-stone-100/80 hover:bg-stone-200/80 border border-stone-200/80 rounded-xl text-xs text-stone-500 min-w-[260px] justify-between transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-2">
           <MagnifyingGlass className="w-3.5 h-3.5 text-stone-400" />
-          <span>Search projects, files, chats, prompts...</span>
+          <span>Quick Search or Commands...</span>
         </div>
-        <kbd className="px-1.5 py-0.5 text-[10px] font-semibold text-stone-400 bg-white border border-stone-200 rounded-md shadow-2xs">
+        <kbd className="px-1.5 py-0.5 text-[10px] font-bold text-stone-400 bg-white border border-stone-200 rounded-md shadow-2xs">
           ⌘K
         </kbd>
       </button>
 
-      {/* Right: Active Model Selector & User Menu */}
-      <div className="flex items-center gap-3">
-        {/* User Selected Models Dropdown */}
+      {/* ══ RIGHT: GOOGLE DRIVE STATUS, MODEL SELECTOR & PROFILE ══ */}
+      <div className="flex items-center gap-2.5">
+        
+        {/* Google Drive Connection Indicator */}
+        <button
+          onClick={toggleDriveSync}
+          className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold border transition-colors cursor-pointer ${
+            driveConnected
+              ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+              : "bg-stone-100 text-stone-600 border-stone-200 hover:bg-stone-200"
+          }`}
+          title={driveConnected ? "Google Drive Sync Active (Encrypted)" : "Click to connect Google Drive sync"}
+        >
+          <CloudCheck className="w-3.5 h-3.5 text-emerald-600" />
+          <span>{driveConnected ? "Drive: Sync Active" : "Connect Drive"}</span>
+        </button>
+
+        {/* ══ PROMINENT UNIVERSAL MODEL SELECTOR ══ */}
         <div className="relative">
           <button
             onClick={() => setShowModelDropdown(!showModelDropdown)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium text-stone-700 bg-white border border-stone-200 hover:border-stone-300 shadow-2xs transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold text-stone-900 bg-blue-50/70 border border-blue-200/80 hover:border-[#2F6BFF] shadow-2xs transition-colors cursor-pointer"
           >
             <Sparkle weight="fill" className="w-3.5 h-3.5 text-[#2F6BFF]" />
-            <span className="font-bold text-stone-900 truncate max-w-[120px] lg:max-w-[180px]">
-              {activeModel?.name || "Select AI Model"}
+            <span className="truncate max-w-[130px] lg:max-w-[190px]">
+              {activeModel?.name || "Meta Llama 3.3 70B"}
             </span>
-            <span className="text-[10px] px-1.5 py-0.2 bg-blue-50 text-[#2F6BFF] rounded font-bold hidden lg:inline">
-              {activeModel?.provider || "NVIDIA NIM"}
+            <span className="text-[10px] px-1.5 py-0.2 bg-[#2F6BFF] text-white rounded-md font-extrabold hidden lg:inline">
+              Free NIM
             </span>
             <CaretDown className="w-3 h-3 text-stone-400" />
           </button>
 
           {showModelDropdown && (
             <div
-              className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-stone-200/80 py-2 z-50 animate-fade-in"
+              className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-stone-200/90 py-2 z-50 animate-fade-in font-sans"
               onMouseLeave={() => setShowModelDropdown(false)}
             >
-              <div className="px-3 py-1.5 text-[10px] font-semibold text-stone-400 uppercase tracking-wider flex justify-between items-center border-b border-stone-100">
-                <span>Selected Active Models ({pinnedModels.length})</span>
-                <Link to="/models" className="text-[#2F6BFF] hover:underline lowercase font-semibold">
-                  Manage Hub →
+              <div className="px-3 py-1.5 border-b border-stone-100 flex items-center justify-between">
+                <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                  Select Active Model ({filteredModels.length})
+                </span>
+                <Link to="/models" className="text-[11px] font-bold text-[#2F6BFF] hover:underline">
+                  Model Hub (460+) →
                 </Link>
               </div>
 
-              <div className="max-h-72 overflow-y-auto py-1 space-y-1">
-                {pinnedModels.length > 0 ? (
-                  pinnedModels.map((m) => {
-                    const isSelected = activeModel?.id === m.id;
-                    const pId = m.providerId || (m.id.includes("nvapi") ? "nvidia" : m.id.includes("groq") ? "groq" : "openrouter");
-                    return (
-                      <button
-                        key={m.id}
-                        onClick={() => {
-                          selectModel(pId, m);
-                          setShowModelDropdown(false);
-                        }}
-                        className={`w-full text-left px-3 py-2 rounded-xl hover:bg-stone-50 flex items-center justify-between text-xs transition-colors ${
-                          isSelected ? "bg-blue-50/70 text-[#2F6BFF] font-semibold" : "text-stone-700"
-                        }`}
-                      >
-                        <div className="truncate pr-2">
-                          <div className="truncate font-bold">{m.name || m.id}</div>
-                          <div className="text-[10px] text-stone-400 truncate font-mono">{m.id}</div>
-                        </div>
-                        {isSelected && <Check className="w-4 h-4 text-[#2F6BFF] shrink-0" />}
-                      </button>
-                    );
-                  })
-                ) : (
-                  <div className="p-4 text-center text-xs text-stone-400">
-                    No models pinned yet. Visit <Link to="/models" className="text-[#2F6BFF] underline font-bold">Model Hub</Link> to pick your favorite models.
-                  </div>
-                )}
+              {/* Model Search Input */}
+              <div className="p-2 border-b border-stone-100">
+                <input
+                  type="text"
+                  placeholder="Filter models..."
+                  value={modelSearchQuery}
+                  onChange={(e) => setModelSearchQuery(e.target.value)}
+                  className="w-full px-2.5 py-1 text-xs bg-stone-50 border border-stone-200 rounded-lg outline-none focus:border-[#2F6BFF]"
+                />
               </div>
 
-              <div className="border-t border-stone-100 mt-1 pt-2 px-3">
+              <div className="max-h-64 overflow-y-auto py-1 space-y-0.5">
+                {filteredModels.map((m) => {
+                  const isSelected = activeModel?.id === m.id || activeModel?.name === m.name;
+                  const pId = m.providerId || "nvidia";
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => {
+                        selectModel(pId, m);
+                        setShowModelDropdown(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-xl hover:bg-stone-50 flex items-center justify-between text-xs transition-colors cursor-pointer ${
+                        isSelected ? "bg-blue-50 text-[#2F6BFF] font-bold" : "text-stone-700"
+                      }`}
+                    >
+                      <div className="truncate pr-2">
+                        <div className="truncate font-extrabold text-stone-900">{m.name || m.id}</div>
+                        <div className="text-[10px] text-stone-400 font-mono truncate">{m.id}</div>
+                      </div>
+                      {isSelected && <Check className="w-4 h-4 text-[#2F6BFF] shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="border-t border-stone-100 mt-1 pt-1.5 px-2">
                 <Link
                   to="/models"
                   onClick={() => setShowModelDropdown(false)}
-                  className="block text-center py-1.5 text-xs font-bold text-[#2F6BFF] bg-blue-50 hover:bg-blue-100 rounded-xl"
+                  className="block text-center py-1.5 text-xs font-extrabold text-[#2F6BFF] bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors"
                 >
-                  + Add / Pin More Models in Hub
+                  Configure BYOK API Keys &amp; Providers
                 </Link>
               </div>
             </div>
           )}
         </div>
 
-        {/* Notifications Icon */}
-        <div className="relative">
-          <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            className="p-2 rounded-xl text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors relative"
-            title="Notifications"
-          >
-            <Bell className="w-4 h-4" />
-            {unreadNotifications.some((n) => n.unread) && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#2F6BFF]"></span>
-            )}
-          </button>
-
-          {showNotifications && (
-            <div
-              className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-stone-200/80 py-3 z-50 animate-fade-in font-sans"
-              onMouseLeave={() => setShowNotifications(false)}
-            >
-              <div className="px-4 pb-2 border-b border-stone-100 flex items-center justify-between">
-                <span className="text-xs font-bold text-stone-900">Notifications</span>
-                {unreadNotifications.some((n) => n.unread) && (
-                  <button
-                    onClick={() =>
-                      setUnreadNotifications((prev) => prev.map((n) => ({ ...n, unread: false })))
-                    }
-                    className="text-[10px] font-bold text-[#2F6BFF] hover:underline"
-                  >
-                    Mark all read
-                  </button>
-                )}
-              </div>
-
-              <div className="max-h-64 overflow-y-auto py-1">
-                {unreadNotifications.length > 0 ? (
-                  unreadNotifications.map((n) => (
-                    <div
-                      key={n.id}
-                      className={`px-4 py-2.5 hover:bg-stone-50 transition-colors border-b border-stone-50 last:border-none ${
-                        n.unread ? "bg-blue-50/30" : ""
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-xs font-bold text-stone-900">{n.title}</span>
-                        <span className="text-[10px] text-stone-400 font-mono">{n.time}</span>
-                      </div>
-                      <p className="text-[11px] text-stone-500 leading-snug">{n.desc}</p>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-4 text-center text-xs text-stone-400">No notifications</div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Profile Dropdown */}
+        {/* Profile Menu */}
         <div className="relative">
           <button
             onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-            className="w-8 h-8 rounded-full bg-stone-900 text-white flex items-center justify-center font-medium text-xs shadow-sm hover:ring-2 hover:ring-[#2F6BFF]/30 transition-all"
+            className="w-8 h-8 rounded-full bg-stone-900 text-white flex items-center justify-center font-bold text-xs shadow-sm hover:ring-2 hover:ring-[#2F6BFF]/30 transition-all cursor-pointer"
           >
-            {user?.username?.[0]?.toUpperCase() || user?.name?.[0]?.toUpperCase() || "H"}
+            {user?.username?.[0]?.toUpperCase() || user?.name?.[0]?.toUpperCase() || "D"}
           </button>
 
           {showProfileDropdown && (
             <div
-              className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-stone-200/80 py-2 z-50 animate-fade-in font-sans"
+              className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-stone-200/90 py-2 z-50 animate-fade-in font-sans"
               onMouseLeave={() => setShowProfileDropdown(false)}
             >
               <div className="px-4 py-2 border-b border-stone-100">
-                <div className="text-xs font-bold text-stone-900">{user?.name || "HVRC Developer"}</div>
-                <div className="text-[11px] text-stone-500 font-mono truncate">{user?.email || "dev@hvrc.ai"}</div>
+                <div className="text-xs font-extrabold text-stone-900">{user?.name || "Lead Developer"}</div>
+                <div className="text-[11px] text-stone-500 font-mono truncate">{user?.email || "developer@hvrc.ai"}</div>
               </div>
               <div className="py-1">
                 <button
                   onClick={() => {
                     setShowProfileDropdown(false);
-                    navigate("/settings/profile");
+                    navigate("/profile");
                   }}
-                  className="w-full text-left px-4 py-2 text-xs text-stone-700 hover:bg-stone-50 flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 text-xs text-stone-700 hover:bg-stone-50 flex items-center gap-2 cursor-pointer font-medium"
                 >
                   <User className="w-4 h-4 text-stone-400" />
                   <span>Profile Settings</span>
                 </button>
-                <button
-                  onClick={() => {
-                    setShowProfileDropdown(false);
-                    navigate("/settings/agents");
-                  }}
-                  className="w-full text-left px-4 py-2 text-xs text-stone-700 hover:bg-stone-50 flex items-center gap-2"
-                >
-                  <Gear className="w-4 h-4 text-stone-400" />
-                  <span>System Preferences</span>
-                </button>
               </div>
               <div className="border-t border-stone-100 pt-1 mt-1">
                 <button
-                  onClick={() => {
-                    localStorage.clear();
-                    window.location.href = "/";
-                  }}
-                  className="w-full text-left px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-medium"
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-bold cursor-pointer"
                 >
                   <SignOut className="w-4 h-4 text-rose-500" />
                   <span>Log Out</span>
@@ -308,6 +304,7 @@ export default function Navbar({ onOpenSearch, projects = [], activeProject, onS
             </div>
           )}
         </div>
+
       </div>
     </header>
   );

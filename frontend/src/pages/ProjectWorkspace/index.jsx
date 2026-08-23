@@ -434,35 +434,32 @@ You can switch between specialist Co-Workers below (Reviewer, Tester, Bug Hunter
   };
 
   const handleDeleteFile = (path, e) => {
-    e.stopPropagation();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (files.length <= 1) {
       alert("You must keep at least one file in the workspace.");
       return;
     }
-    if (confirm(`Delete ${path}?`)) {
-      const updated = files.filter((f) => f.path !== path);
-      setFiles(updated);
-      setOpenTabs(openTabs.filter((t) => t !== path));
-      if (activeFilePath === path) {
-        setActiveFilePath(updated[0]?.path || "");
-      }
+    const updated = files.filter((f) => f.path !== path);
+    setFiles(updated);
+    setOpenTabs(openTabs.filter((t) => t !== path));
+    if (activeFilePath === path) {
+      setActiveFilePath(updated[0]?.path || "");
     }
   };
 
   const handleClearToBlank = () => {
-    if (confirm("Reset to clean Blank Project? All template code will be cleared.")) {
-      setFiles(BLANK_STARTER_FILES);
-      setActiveFilePath("src/App.jsx");
-      setOpenTabs(["src/App.jsx", "src/index.css"]);
-    }
+    setFiles(BLANK_STARTER_FILES);
+    setActiveFilePath("src/App.jsx");
+    setOpenTabs(["src/App.jsx", "src/index.css"]);
   };
 
   const handleLoadStarter = () => {
-    if (confirm("Load React Starter Template with interactive counter demo?")) {
-      setFiles(REACT_STARTER_FILES);
-      setActiveFilePath("src/App.jsx");
-      setOpenTabs(["src/App.jsx", "src/index.css"]);
-    }
+    setFiles(REACT_STARTER_FILES);
+    setActiveFilePath("src/App.jsx");
+    setOpenTabs(["src/App.jsx", "src/index.css"]);
   };
 
   const handleExportZip = () => {

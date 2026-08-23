@@ -21,10 +21,8 @@ export async function signInWithGoogle() {
     provider: "google",
     options: {
       redirectTo: `${window.location.origin}/`,
-      scopes: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
       queryParams: {
-        access_type: "offline",
-        prompt: "consent",
+        access_type: "online",
       },
     },
   });

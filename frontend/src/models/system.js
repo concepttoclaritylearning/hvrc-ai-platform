@@ -340,9 +340,8 @@ const System = {
         headers: baseHeaders(),
       }
     )
-      .then((res) => res.json())
+      .then((res) => (res.ok ? res.json() : { supportEmail: "" }))
       .catch((e) => {
-        console.log(e);
         return { email: "", error: e.message };
       });
 
